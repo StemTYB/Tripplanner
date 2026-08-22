@@ -13,5 +13,5 @@ run_worker_first = true
 
 [[d1_databases]]
 binding = "DB"
-database_name = "trip-planner-db"
-database_id = "PON_AQUI_TU_DATABASE_ID"  # lo genera `wrangler d1 create trip-planner-db`
+database_name = "tripplanner-db"
+database_id = "700cead3-ee30-4abf-8776-2429735c0b9c"  # lo genera `wrangler d1 create trip-planner-db`
