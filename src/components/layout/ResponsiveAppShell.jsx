@@ -82,7 +82,7 @@ function DesktopSidebar({ tabs, tab, setTab, theme, setTheme }) {
 
 function BottomNav({ tabs, tab, setTab }) {
   return (
-    <nav className="flex items-stretch border-t bg-paper py-1.5 lg:hidden" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+    <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch border-t bg-paper py-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] lg:hidden" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
       {tabs.map((t) => {
         const Icon = t.icon;
         const active = tab === t.key;
@@ -109,7 +109,7 @@ function ResponsiveAppShell({ tabs, tab, setTab, theme, setTheme, isOtaku, child
     >
       <TopBar tabs={tabs} tab={tab} theme={theme} setTheme={setTheme} />
       <DesktopSidebar tabs={tabs} tab={tab} setTab={setTab} theme={theme} setTheme={setTheme} />
-      <main className="flex-1 overflow-y-auto lg:min-h-[calc(100vh-5rem)] lg:max-h-[calc(100vh-5rem)] lg:px-5 lg:py-6">
+      <main className="flex-1 overflow-y-auto pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:min-h-[calc(100vh-5rem)] lg:max-h-[calc(100vh-5rem)] lg:px-5 lg:py-6 lg:pb-6">
         {children}
       </main>
       <BottomNav tabs={tabs} tab={tab} setTab={setTab} />
