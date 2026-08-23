@@ -12,7 +12,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Home, Calendar, Map, Compass, StickyNote, Plus, X, Pencil, Trash2,
+  Home, Calendar, Map, Compass, StickyNote, Plus, Pencil,
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
   Plane, TrainFront, Bus, Car, Ship,
   MapPin, Route, BedDouble,
@@ -20,6 +20,12 @@ import {
   CheckCircle2, ArrowRight,
 } from 'lucide-react';
 import { api } from './api';
+import { DeleteButton } from './components/ui/DeleteButton';
+import { EmptyState } from './components/ui/EmptyState';
+import { Field } from './components/ui/Field';
+import { FormActions } from './components/ui/FormActions';
+import { SectionHeader } from './components/ui/SectionHeader';
+import { Sheet } from './components/ui/Sheet';
 
 /* ============================================================
    ESTILOS GLOBALES (fuentes, colores, clases utilitarias)
@@ -230,99 +236,6 @@ function buildTimelineEntries(data) {
   return sections;
 }
 
-
-/* ============================================================
-   UI GENÉRICA REUTILIZABLE
-   ============================================================ */
-
-function Field({ label, children }) {
-  return (
-    <div className="mb-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-ink mb-1.5" style={{ opacity: 0.5 }}>{label}</p>
-      {children}
-    </div>
-  );
-}
-
-function FormActions({ mode, onSave, onDelete, disabled }) {
-  return (
-    <div className="pt-2">
-      <button onClick={onSave} disabled={disabled}
-        className="w-full py-3 rounded-xl font-display font-semibold bg-stamp text-paper"
-        style={{ opacity: disabled ? 0.5 : 1 }}>
-        {mode === 'add' ? 'Añadir' : 'Guardar cambios'}
-      </button>
-      {mode === 'edit' && onDelete && (
-        <button onClick={onDelete} className="w-full py-2.5 mt-2 rounded-xl font-semibold text-stamp text-sm">
-          Eliminar
-        </button>
-      )}
-    </div>
-  );
-}
-
-function Sheet({ open, title, onClose, children }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0" style={{ backgroundColor: 'rgba(var(--ink-rgb),0.55)' }} onClick={onClose} />
-      <div className="relative w-full sm:max-w-md bg-paper rounded-t-3xl sm:rounded-3xl overflow-y-auto animate-sheet-up" style={{ maxHeight: '88vh' }}>
-        <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-paper" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
-          <h3 className="font-display text-lg font-bold text-ink">{title}</h3>
-          <button onClick={onClose} className="p-2 rounded-full" style={{ backgroundColor: 'rgba(var(--ink-rgb),0.06)' }}>
-            <X size={17} className="text-ink" />
-          </button>
-        </div>
-        <div className="p-5">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function DeleteButton({ onDelete }) {
-  const [confirming, setConfirming] = useState(false);
-  useEffect(() => {
-    if (!confirming) return;
-    const t = setTimeout(() => setConfirming(false), 3000);
-    return () => clearTimeout(t);
-  }, [confirming]);
-  if (confirming) {
-    return (
-      <div className="flex items-center gap-1">
-        <button onClick={onDelete} className="font-mono text-xs px-2 py-1 rounded-lg bg-stamp text-paper font-semibold">Sí</button>
-        <button onClick={() => setConfirming(false)} className="font-mono text-xs px-2 py-1 rounded-lg text-ink" style={{ backgroundColor: 'rgba(var(--ink-rgb),0.08)' }}>No</button>
-      </div>
-    );
-  }
-  return (
-    <button onClick={() => setConfirming(true)} className="p-1.5 rounded-lg text-ink" style={{ opacity: 0.5 }} aria-label="Eliminar">
-      <Trash2 size={14} />
-    </button>
-  );
-}
-
-function EmptyState({ icon: Icon, title, subtitle }) {
-  return (
-    <div className="rounded-2xl border border-dashed p-6 text-center" style={{ borderColor: 'rgba(var(--ink-rgb),0.18)' }}>
-      <Icon size={22} className="mx-auto text-ink" style={{ opacity: 0.35 }} />
-      <p className="font-display font-semibold text-ink text-sm mt-2">{title}</p>
-      {subtitle && <p className="text-xs text-ink mt-1" style={{ opacity: 0.5 }}>{subtitle}</p>}
-    </div>
-  );
-}
-
-function SectionHeader({ title, onAdd, addLabel = 'Añadir' }) {
-  return (
-    <div className="flex items-center justify-between mb-3">
-      <h2 className="font-display text-base font-bold text-ink">{title}</h2>
-      {onAdd && (
-        <button onClick={onAdd} className="flex items-center gap-1 font-mono text-xs font-semibold px-2.5 py-1.5 rounded-full bg-ink text-paper">
-          <Plus size={13} /> {addLabel}
-        </button>
-      )}
-    </div>
-  );
-}
 
 /* ============================================================
    FORMULARIOS (uno por tipo de entidad)
