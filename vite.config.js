@@ -5,8 +5,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // 8787 es el puerto por default de `wrangler dev`
-      '/api': 'http://localhost:8787',
+      '/api': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
     },
   },
 });
