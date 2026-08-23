@@ -14,18 +14,17 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Home, Calendar, Map, Compass, StickyNote, Plus, Pencil,
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
-  Plane, TrainFront, Bus, Car, Ship,
   MapPin, Route, BedDouble,
-  Utensils, ShoppingBag, Landmark, Music, Trees, Sparkles, Gauge,
+  ShoppingBag,
   CheckCircle2, ArrowRight,
 } from 'lucide-react';
 import { api } from './api';
+import { SheetRouter } from './components/forms/SheetRouter';
+import { ResponsiveAppShell } from './components/layout/ResponsiveAppShell';
 import { DeleteButton } from './components/ui/DeleteButton';
 import { EmptyState } from './components/ui/EmptyState';
-import { Field } from './components/ui/Field';
-import { FormActions } from './components/ui/FormActions';
 import { SectionHeader } from './components/ui/SectionHeader';
-import { Sheet } from './components/ui/Sheet';
+import { colorVar, PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES } from './domain/tripConfig';
 
 /* ============================================================
    ESTILOS GLOBALES (fuentes, colores, clases utilitarias)
@@ -116,11 +115,6 @@ function GlobalStyle() {
    CONFIGURACIÓN / TAXONOMÍAS
    ============================================================ */
 
-// colorVar returns a CSS var() reference (not a literal hex) so every dynamic
-// color usage (destination badges, category icons, map pins) automatically
-// re-skins when the active theme changes the underlying custom property.
-const colorVar = (key) => `var(--${key})`;
-
 // Dos temas: mismo layout y mismos componentes, solo cambian los valores de
 // las variables CSS (colores + tipografías). Añadir un tercer tema = añadir
 // una entrada más aquí, nada más.
@@ -155,27 +149,6 @@ const TABS = [
 const ENTITY_KEY = {
   destination: 'destinations', stay: 'stays', transport: 'transports',
   place: 'places', activity: 'activities', note: 'notes', shopping: 'shopping',
-};
-
-const TRANSPORT_TYPES = {
-  flight: { label: 'Vuelo', icon: Plane },
-  train: { label: 'Tren', icon: TrainFront },
-  bus: { label: 'Autobús', icon: Bus },
-  car: { label: 'Auto', icon: Car },
-  ferry: { label: 'Ferry', icon: Ship },
-};
-
-const STAY_TYPES = { hotel: 'Hotel', hostel: 'Hostal', airbnb: 'Airbnb / Apto', other: 'Otro' };
-
-const PLACE_CATEGORIES = {
-  comida: { label: 'Comida', icon: Utensils, color: 'stamp' },
-  compras: { label: 'Compras', icon: ShoppingBag, color: 'gold' },
-  cultura: { label: 'Cultura', icon: Landmark, color: 'sky' },
-  noche: { label: 'Vida nocturna', icon: Music, color: 'ink' },
-  naturaleza: { label: 'Naturaleza', icon: Trees, color: 'sage' },
-  entretenimiento: { label: 'Entretenimiento', icon: Sparkles, color: 'gold' },
-  auto: { label: 'Motor', icon: Gauge, color: 'sky' },
-  otro: { label: 'Otro', icon: MapPin, color: 'ink' },
 };
 
 /* ============================================================
@@ -236,234 +209,6 @@ function buildTimelineEntries(data) {
   return sections;
 }
 
-
-/* ============================================================
-   FORMULARIOS (uno por tipo de entidad)
-   ============================================================ */
-
-function TripForm({ initial, onSubmit }) {
-  const [v, setV] = useState(initial);
-  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
-  return (
-    <div>
-      <Field label="Nombre del viaje"><input className="field-input" value={v.name} onChange={set('name')} /></Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Fecha de inicio"><input type="date" className="field-input" value={v.startDate} onChange={set('startDate')} /></Field>
-        <Field label="Fecha de fin"><input type="date" className="field-input" value={v.endDate} onChange={set('endDate')} /></Field>
-      </div>
-      <FormActions mode="edit" onSave={() => onSubmit(v)} disabled={!v.name} />
-    </div>
-  );
-}
-
-function DestinationForm({ initial, mode, onSubmit, onDelete }) {
-  const [v, setV] = useState(initial);
-  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
-  return (
-    <div>
-      <Field label="Nombre del destino"><input className="field-input" value={v.name} onChange={set('name')} placeholder="Ej. Kioto" /></Field>
-      <Field label="Región / país"><input className="field-input" value={v.region} onChange={set('region')} placeholder="Ej. Kansai, Japón" /></Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Llegada"><input type="date" className="field-input" value={v.startDate} onChange={set('startDate')} /></Field>
-        <Field label="Salida"><input type="date" className="field-input" value={v.endDate} onChange={set('endDate')} /></Field>
-      </div>
-      <Field label="Color">
-        <div className="flex gap-2">
-          {['sky', 'gold', 'sage'].map((c) => (
-            <button key={c} type="button" onClick={() => setV((s) => ({ ...s, color: c }))}
-              className="w-8 h-8 rounded-full" style={{ backgroundColor: colorVar(c), border: v.color === c ? '2.5px solid var(--ink)' : '2.5px solid transparent' }} />
-          ))}
-        </div>
-      </Field>
-      <Field label="Notas"><textarea className="field-textarea" value={v.note} onChange={set('note')} placeholder="Detalles, ideas, recordatorios..." /></Field>
-      <FormActions mode={mode} onSave={() => onSubmit(v)} onDelete={onDelete} disabled={!v.name} />
-    </div>
-  );
-}
-
-function StayForm({ initial, mode, destinations, onSubmit, onDelete }) {
-  const [v, setV] = useState(initial);
-  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
-  return (
-    <div>
-      <Field label="Destino">
-        <select className="field-select" value={v.destId} onChange={set('destId')}>
-          {destinations.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-        </select>
-      </Field>
-      <Field label="Nombre del alojamiento"><input className="field-input" value={v.name} onChange={set('name')} placeholder="Ej. Namba Backpackers" /></Field>
-      <Field label="Tipo">
-        <select className="field-select" value={v.type} onChange={set('type')}>
-          {Object.entries(STAY_TYPES).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-        </select>
-      </Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Check-in"><input type="date" className="field-input" value={v.checkIn} onChange={set('checkIn')} /></Field>
-        <Field label="Check-out"><input type="date" className="field-input" value={v.checkOut} onChange={set('checkOut')} /></Field>
-      </div>
-      <Field label="Dirección"><input className="field-input" value={v.address} onChange={set('address')} /></Field>
-      <Field label="Notas"><textarea className="field-textarea" value={v.note} onChange={set('note')} /></Field>
-      <FormActions mode={mode} onSave={() => onSubmit(v)} onDelete={onDelete} disabled={!v.name || !v.destId} />
-    </div>
-  );
-}
-
-function TransportForm({ initial, mode, onSubmit, onDelete }) {
-  const [v, setV] = useState(initial);
-  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
-  return (
-    <div>
-      <Field label="Tipo">
-        <select className="field-select" value={v.type} onChange={set('type')}>
-          {Object.entries(TRANSPORT_TYPES).map(([k, cfg]) => <option key={k} value={k}>{cfg.label}</option>)}
-        </select>
-      </Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Origen"><input className="field-input" value={v.from} onChange={set('from')} /></Field>
-        <Field label="Destino"><input className="field-input" value={v.to} onChange={set('to')} /></Field>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Fecha salida"><input type="date" className="field-input" value={v.depDate} onChange={set('depDate')} /></Field>
-        <Field label="Hora salida"><input type="time" className="field-input" value={v.depTime} onChange={set('depTime')} /></Field>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Fecha llegada"><input type="date" className="field-input" value={v.arrDate} onChange={set('arrDate')} /></Field>
-        <Field label="Hora llegada"><input type="time" className="field-input" value={v.arrTime} onChange={set('arrTime')} /></Field>
-      </div>
-      <Field label="Aerolínea / operador"><input className="field-input" value={v.carrier} onChange={set('carrier')} /></Field>
-      <Field label="Notas"><textarea className="field-textarea" value={v.note} onChange={set('note')} /></Field>
-      <FormActions mode={mode} onSave={() => onSubmit(v)} onDelete={onDelete} disabled={!v.from || !v.to} />
-    </div>
-  );
-}
-
-function PlaceForm({ initial, mode, destinations, onSubmit, onDelete }) {
-  const [v, setV] = useState(initial);
-  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
-  return (
-    <div>
-      <Field label="Destino">
-        <select className="field-select" value={v.destId} onChange={set('destId')}>
-          {destinations.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-        </select>
-      </Field>
-      <Field label="Nombre del lugar"><input className="field-input" value={v.name} onChange={set('name')} placeholder="Ej. Akihabara" /></Field>
-      <Field label="Categoría">
-        <select className="field-select" value={v.category} onChange={set('category')}>
-          {Object.entries(PLACE_CATEGORIES).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}
-        </select>
-      </Field>
-      <Field label="Notas"><textarea className="field-textarea" value={v.note} onChange={set('note')} /></Field>
-      <label className="flex items-center gap-2 mb-4">
-        <input type="checkbox" checked={v.visited} onChange={(e) => setV((s) => ({ ...s, visited: e.target.checked }))} />
-        <span className="text-sm text-ink">Ya lo visité</span>
-      </label>
-      <FormActions mode={mode} onSave={() => onSubmit(v)} onDelete={onDelete} disabled={!v.name || !v.destId} />
-    </div>
-  );
-}
-
-function ActivityForm({ initial, mode, destinations, places, onSubmit, onDelete }) {
-  const [v, setV] = useState(initial);
-  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
-  const destPlaces = places.filter((p) => p.destId === v.destId);
-  return (
-    <div>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Fecha"><input type="date" className="field-input" value={v.date} onChange={set('date')} /></Field>
-        <Field label="Hora"><input type="time" className="field-input" value={v.time} onChange={set('time')} /></Field>
-      </div>
-      <Field label="Título"><input className="field-input" value={v.title} onChange={set('title')} placeholder="Ej. Cena en izakaya" /></Field>
-      <Field label="Destino">
-        <select className="field-select" value={v.destId} onChange={set('destId')}>
-          {destinations.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-        </select>
-      </Field>
-      <Field label="Categoría">
-        <select className="field-select" value={v.category} onChange={set('category')}>
-          {Object.entries(PLACE_CATEGORIES).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}
-        </select>
-      </Field>
-      {destPlaces.length > 0 && (
-        <Field label="Lugar relacionado (opcional)">
-          <select className="field-select" value={v.placeId || ''} onChange={set('placeId')}>
-            <option value="">Ninguno</option>
-            {destPlaces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </Field>
-      )}
-      <Field label="Notas"><textarea className="field-textarea" value={v.note} onChange={set('note')} /></Field>
-      <FormActions mode={mode} onSave={() => onSubmit(v)} onDelete={onDelete} disabled={!v.title || !v.date} />
-    </div>
-  );
-}
-
-function NoteForm({ initial, mode, onSubmit, onDelete }) {
-  const [v, setV] = useState(initial);
-  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
-  return (
-    <div>
-      <Field label="Título"><input className="field-input" value={v.title} onChange={set('title')} /></Field>
-      <Field label="Contenido"><textarea className="field-textarea" value={v.content} onChange={set('content')} style={{ minHeight: '8rem' }} /></Field>
-      <FormActions mode={mode} onSave={() => onSubmit(v)} onDelete={onDelete} disabled={!v.title} />
-    </div>
-  );
-}
-
-function ShoppingForm({ initial, mode, onSubmit, onDelete }) {
-  const [v, setV] = useState(initial);
-  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
-  return (
-    <div>
-      <Field label="Artículo"><input className="field-input" value={v.name} onChange={set('name')} placeholder="Ej. Manga de Chainsaw Man" /></Field>
-      <Field label="Zona / dónde conseguirlo"><input className="field-input" value={v.zone} onChange={set('zone')} placeholder="Ej. Akihabara, Book-Off, online..." /></Field>
-      <Field label="Resumen"><textarea className="field-textarea" value={v.summary} onChange={set('summary')} placeholder="Detalles, edición, tallas, qué buscar..." /></Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Precio aprox. (¥)"><input type="number" inputMode="decimal" className="field-input" value={v.estPrice} onChange={set('estPrice')} placeholder="0" /></Field>
-        <Field label="Precio real (¥)"><input type="number" inputMode="decimal" className="field-input" value={v.actualPrice} onChange={set('actualPrice')} placeholder="0" /></Field>
-      </div>
-      <label className="flex items-center gap-2 mb-4">
-        <input type="checkbox" checked={v.acquired} onChange={(e) => setV((s) => ({ ...s, acquired: e.target.checked }))} />
-        <span className="text-sm text-ink">Ya lo conseguí</span>
-      </label>
-      <FormActions mode={mode} onSave={() => onSubmit(v)} onDelete={onDelete} disabled={!v.name} />
-    </div>
-  );
-}
-
-const SHEET_TITLES = {
-  trip: () => 'Editar viaje',
-  destination: (m) => (m === 'add' ? 'Nuevo destino' : 'Editar destino'),
-  stay: (m) => (m === 'add' ? 'Nuevo alojamiento' : 'Editar alojamiento'),
-  transport: (m) => (m === 'add' ? 'Nuevo transporte' : 'Editar transporte'),
-  place: (m) => (m === 'add' ? 'Nuevo lugar' : 'Editar lugar'),
-  activity: (m) => (m === 'add' ? 'Nueva actividad' : 'Editar actividad'),
-  note: (m) => (m === 'add' ? 'Nueva nota' : 'Editar nota'),
-  shopping: (m) => (m === 'add' ? 'Nuevo artículo' : 'Editar artículo'),
-};
-
-function SheetRouter({ sheet, onClose, onSave, onDeleteEntity, destinations, places }) {
-  if (!sheet) return null;
-  const title = SHEET_TITLES[sheet.type](sheet.mode);
-  const common = {
-    initial: sheet.initial,
-    mode: sheet.mode,
-    onSubmit: onSave,
-    onDelete: sheet.mode === 'edit' ? () => onDeleteEntity(sheet.type, sheet.initial.id) : undefined,
-  };
-  return (
-    <Sheet open title={title} onClose={onClose}>
-      {sheet.type === 'trip' && <TripForm {...common} />}
-      {sheet.type === 'destination' && <DestinationForm {...common} />}
-      {sheet.type === 'stay' && <StayForm {...common} destinations={destinations} />}
-      {sheet.type === 'transport' && <TransportForm {...common} />}
-      {sheet.type === 'place' && <PlaceForm {...common} destinations={destinations} />}
-      {sheet.type === 'activity' && <ActivityForm {...common} destinations={destinations} places={places} />}
-      {sheet.type === 'note' && <NoteForm {...common} />}
-      {sheet.type === 'shopping' && <ShoppingForm {...common} />}
-    </Sheet>
-  );
-}
 
 /* ============================================================
    TARJETAS / FILAS
@@ -1009,62 +754,6 @@ function NotasView({ data, openAdd, openEdit, onDelete }) {
 }
 
 /* ============================================================
-   NAVEGACIÓN
-   ============================================================ */
-
-function ThemeToggle({ theme, setTheme }) {
-  const isOtaku = theme === 'otaku';
-  return (
-    <button
-      onClick={() => setTheme(isOtaku ? 'default' : 'otaku')}
-      className="flex items-center gap-1.5 font-mono text-xs font-semibold px-3 py-1.5 rounded-full shrink-0"
-      style={{
-        backgroundColor: isOtaku ? 'var(--stamp)' : 'rgba(var(--ink-rgb),0.08)',
-        color: isOtaku ? 'var(--paper)' : 'var(--ink)',
-      }}
-      aria-pressed={isOtaku}
-      aria-label="Cambiar tema"
-    >
-      <Sparkles size={13} />
-      Otaku mode
-    </button>
-  );
-}
-
-function TopBar({ tab, theme, setTheme }) {
-  const current = TABS.find((t) => t.key === tab);
-  return (
-    <header className="flex items-center justify-between gap-2 px-4 py-3.5 border-b" style={{ borderColor: 'rgba(var(--ink-rgb),0.08)' }}>
-      <div className="flex items-center gap-2 min-w-0">
-        <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-ink shrink-0"><Compass size={16} className="text-paper" /></span>
-        <div className="min-w-0">
-          <p className="font-mono text-xs text-ink" style={{ opacity: 0.45 }}>Trip Planner</p>
-          <p className="font-display font-bold text-ink text-sm leading-none mt-0.5 truncate">{current.label}</p>
-        </div>
-      </div>
-      <ThemeToggle theme={theme} setTheme={setTheme} />
-    </header>
-  );
-}
-
-function BottomNav({ tab, setTab }) {
-  return (
-    <nav className="flex items-stretch border-t bg-paper py-1.5" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
-      {TABS.map((t) => {
-        const Icon = t.icon;
-        const active = tab === t.key;
-        return (
-          <button key={t.key} onClick={() => setTab(t.key)} className="flex-1 min-w-0 flex flex-col items-center justify-center gap-1 px-0.5 py-0.5 rounded-xl">
-            <Icon size={19} style={{ color: active ? 'var(--stamp)' : 'var(--ink)', opacity: active ? 1 : 0.45 }} />
-            <span className="font-mono w-full text-center truncate" style={{ fontSize: '10px', color: active ? 'var(--stamp)' : 'var(--ink)', opacity: active ? 1 : 0.45 }}>{t.label}</span>
-          </button>
-        );
-      })}
-    </nav>
-  );
-}
-
-/* ============================================================
    APP PRINCIPAL
    ============================================================ */
 
@@ -1173,40 +862,35 @@ export default function TripPlannerApp() {
     );
   }
 
+  const activeView = (
+    <>
+      {tab === 'resumen' && (
+        <ResumenView data={data} destinations={destinationsSorted} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onMoveDestination={moveDestination} />
+      )}
+      {tab === 'itinerario' && (
+        <ItinerarioView data={data} sections={timelineSections} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onShiftActivityDay={shiftActivityDay} />
+      )}
+      {tab === 'mapa' && (
+        <MapaView data={data} destinations={destinationsSorted} openEdit={openEdit} />
+      )}
+      {tab === 'lugares' && (
+        <LugaresView data={data} destinations={destinationsSorted} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onToggleVisited={toggleVisited} />
+      )}
+      {tab === 'compras' && (
+        <ComprasView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onToggleAcquired={toggleAcquired} />
+      )}
+      {tab === 'notas' && (
+        <NotasView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} />
+      )}
+    </>
+  );
+
   return (
     <div className="min-h-screen w-full flex justify-center sm:py-10 sm:px-4" style={{ ...themeVars, backgroundColor: 'var(--ink)' }}>
       <GlobalStyle />
-      <div
-        className="w-full sm:max-w-md bg-paper min-h-screen sm:rounded-3xl sm:shadow-2xl overflow-hidden flex flex-col"
-        style={{
-          fontFamily: 'var(--font-body)',
-          backgroundImage: isOtaku ? 'radial-gradient(rgba(var(--ink-rgb),0.07) 1px, transparent 1.6px)' : 'none',
-          backgroundSize: '16px 16px',
-        }}
-      >
-        <TopBar tab={tab} theme={theme} setTheme={setTheme} />
-        <main className="flex-1 overflow-y-auto">
-          {tab === 'resumen' && (
-            <ResumenView data={data} destinations={destinationsSorted} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onMoveDestination={moveDestination} />
-          )}
-          {tab === 'itinerario' && (
-            <ItinerarioView data={data} sections={timelineSections} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onShiftActivityDay={shiftActivityDay} />
-          )}
-          {tab === 'mapa' && (
-            <MapaView data={data} destinations={destinationsSorted} openEdit={openEdit} />
-          )}
-          {tab === 'lugares' && (
-            <LugaresView data={data} destinations={destinationsSorted} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onToggleVisited={toggleVisited} />
-          )}
-          {tab === 'compras' && (
-            <ComprasView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onToggleAcquired={toggleAcquired} />
-          )}
-          {tab === 'notas' && (
-            <NotasView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} />
-          )}
-        </main>
-        <BottomNav tab={tab} setTab={setTab} />
-      </div>
+      <ResponsiveAppShell tabs={TABS} tab={tab} setTab={setTab} theme={theme} setTheme={setTheme} isOtaku={isOtaku}>
+        {activeView}
+      </ResponsiveAppShell>
       <SheetRouter sheet={sheet} onClose={closeSheet} onSave={handleSave} onDeleteEntity={handleDeleteEntity} destinations={destinationsSorted} places={data.places} />
     </div>
   );
