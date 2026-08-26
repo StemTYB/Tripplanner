@@ -195,6 +195,20 @@ function ShoppingForm({ initial, mode, onSubmit, onDelete }) {
   );
 }
 
+function ExperienceForm({ initial, mode, onSubmit, onDelete }) {
+  const [v, setV] = useState(initial);
+  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
+  return (
+    <div>
+      <Field label="Nombre de la experiencia"><input className="field-input" value={v.name} onChange={set('name')} placeholder="Ej. Torneo arcade en Akihabara" /></Field>
+      <Field label="Lugar"><input className="field-input" value={v.location} onChange={set('location')} placeholder="Ej. Hi-tech Land, Taito Station" /></Field>
+      <Field label="Precio aprox. o real"><input className="field-input" value={v.price} onChange={set('price')} placeholder="Ej. ¥800 · gratis" /></Field>
+      <Field label="Descripción"><textarea className="field-textarea" value={v.description} onChange={set('description')} style={{ minHeight: '8rem' }} /></Field>
+      <FormActions mode={mode} onSave={() => onSubmit(v)} onDelete={onDelete} disabled={!v.name} />
+    </div>
+  );
+}
+
 const SHEET_TITLES = {
   trip: () => 'Editar viaje',
   destination: (m) => (m === 'add' ? 'Nuevo destino' : 'Editar destino'),
@@ -204,6 +218,7 @@ const SHEET_TITLES = {
   activity: (m) => (m === 'add' ? 'Nueva actividad' : 'Editar actividad'),
   note: (m) => (m === 'add' ? 'Nueva nota' : 'Editar nota'),
   shopping: (m) => (m === 'add' ? 'Nuevo artículo' : 'Editar artículo'),
+  experience: (m) => (m === 'add' ? 'Nueva experiencia' : 'Editar experiencia'),
 };
 
 function SheetRouter({ sheet, onClose, onSave, onDeleteEntity, destinations, places }) {
@@ -225,6 +240,7 @@ function SheetRouter({ sheet, onClose, onSave, onDeleteEntity, destinations, pla
       {sheet.type === 'activity' && <ActivityForm {...common} destinations={destinations} places={places} />}
       {sheet.type === 'note' && <NoteForm {...common} />}
       {sheet.type === 'shopping' && <ShoppingForm {...common} />}
+      {sheet.type === 'experience' && <ExperienceForm {...common} />}
     </Sheet>
   );
 }

@@ -10,12 +10,12 @@
  * D1 (SQLite administrado por Cloudflare).
   */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Home, Calendar, Map, Compass, StickyNote, Plus, Pencil,
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
   MapPin, Route, BedDouble,
-  ShoppingBag,
+  ShoppingBag, Sparkles,
   CheckCircle2, ArrowRight,
 } from 'lucide-react';
 import { api } from './api';
@@ -149,6 +149,7 @@ const TABS = [
 const ENTITY_KEY = {
   destination: 'destinations', stay: 'stays', transport: 'transports',
   place: 'places', activity: 'activities', note: 'notes', shopping: 'shopping',
+  experience: 'experiences',
 };
 
 /* ============================================================
@@ -730,10 +731,10 @@ function ComprasView({ data, openAdd, openEdit, onDelete, onToggleAcquired }) {
   );
 }
 
-function NotasView({ data, openAdd, openEdit, onDelete }) {
+function NotasView({ data, openAdd, openEdit, onDelete, onHeaderClick }) {
   return (
     <div className="px-4 pt-4 pb-6 space-y-3">
-      <SectionHeader title="Notas" onAdd={() => openAdd('note', { title: '', content: '' })} />
+      <SectionHeader title="Notas" onAdd={() => openAdd('note', { title: '', content: '' })} onTitleClick={onHeaderClick} />
       {data.notes.length === 0 && <EmptyState icon={StickyNote} title="Sin notas todavía" subtitle="Guarda ideas, recordatorios o cosas que no quieres olvidar" />}
       {data.notes.map((n) => (
         <div key={n.id} className="rounded-2xl p-4 bg-white border" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
@@ -753,6 +754,47 @@ function NotasView({ data, openAdd, openEdit, onDelete }) {
   );
 }
 
+function ExperienceRow({ x, onEdit, onDelete }) {
+  return (
+    <div className="rounded-2xl p-4 bg-white border" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+      <div className="flex items-start justify-between gap-2">
+        <button onClick={onEdit} className="text-left">
+          <h3 className="font-display font-semibold text-ink text-sm">{x.name}</h3>
+          {(x.location || x.price) && (
+            <p className="font-mono text-xs text-ink truncate mt-0.5" style={{ opacity: 0.55 }}>
+              {[x.location, x.price].filter(Boolean).join(' · ')}
+            </p>
+          )}
+        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button onClick={onEdit} className="p-1 rounded text-ink" style={{ opacity: 0.5 }}><Pencil size={13} /></button>
+          <DeleteButton onDelete={onDelete} />
+        </div>
+      </div>
+      {x.description && <p className="text-sm text-ink mt-1.5 leading-relaxed" style={{ opacity: 0.7 }}>{x.description}</p>}
+    </div>
+  );
+}
+
+// Easter Egg: pestaña oculta, se desbloquea con 3 toques rápidos en Notas
+// estando en Otaku Mode. CRUD idéntico al resto de entidades (experiences),
+// aislado por completo de la lógica de Notas.
+function EasterEggView({ data, openAdd, openEdit, onDelete }) {
+  return (
+    <div className="px-4 pt-4 pb-6 space-y-3">
+      <div className="flex items-center gap-2 mb-1">
+        <Sparkles size={18} className="text-stamp" />
+        <span className="font-display text-lg font-bold text-ink">Experiencias secretas</span>
+      </div>
+      <SectionHeader title="Easter Egg" onAdd={() => openAdd('experience', { name: '', location: '', price: '', description: '' })} addLabel="Añadir experiencia" />
+      {data.experiences.length === 0 && <EmptyState icon={Sparkles} title="Sin experiencias todavía" subtitle="Guarda aquí esos momentos únicos del viaje" />}
+      {data.experiences.map((x) => (
+        <ExperienceRow key={x.id} x={x} onEdit={() => openEdit('experience', x)} onDelete={() => onDelete('experiences', x.id)} />
+      ))}
+    </div>
+  );
+}
+
 /* ============================================================
    APP PRINCIPAL
    ============================================================ */
@@ -762,6 +804,47 @@ export default function TripPlannerApp() {
   const [tab, setTab] = useState('resumen');
   const [sheet, setSheet] = useState(null);
   const [theme, setTheme] = useState('default');
+  const [eggUnlocked, setEggUnlocked] = useState(false);
+  const notesTap = useRef({ count: 0, last: 0 });
+  const notesTimeoutRef = useRef(null);
+
+  // Al salir de Otaku Mode se resetea el Easter Egg: vuelve la pestaña Notas
+  // y se limpia el contador de toques (previene reactivaciones accidentales).
+  useEffect(() => {
+    if (theme !== 'otaku') {
+      notesTap.current = { count: 0, last: 0 };
+      if (notesTimeoutRef.current) {
+        clearTimeout(notesTimeoutRef.current);
+        notesTimeoutRef.current = null;
+      }
+      setEggUnlocked(false);
+      setTab((t) => (t === 'easteregg' ? 'notas' : t));
+    }
+  }, [theme]);
+
+  // Gesto de desbloqueo del Easter Egg: 3 toques rápidos (≤ 1.5s entre el
+  // primero y el tercero) sobre el título de "Notas" estando en Otaku Mode.
+  const handleNotesHeaderClick = () => {
+    if (theme !== 'otaku') return;
+
+    if (notesTimeoutRef.current) {
+      clearTimeout(notesTimeoutRef.current);
+      notesTimeoutRef.current = null;
+    }
+
+    notesTap.current.count += 1;
+
+    if (notesTap.current.count >= 3) {
+      notesTap.current.count = 0;
+      setEggUnlocked(true);
+      alert('¡Experiencias desbloqueadas! Se revela la pestaña secreta.');
+    } else {
+      notesTimeoutRef.current = setTimeout(() => {
+        notesTap.current.count = 0;
+        notesTimeoutRef.current = null;
+      }, 1500);
+    }
+  };
 
   useEffect(() => {
     api.getState().then(setData).catch((e) => console.error('No se pudo cargar el viaje desde el servidor', e));
@@ -839,6 +922,7 @@ export default function TripPlannerApp() {
 
   const destinationsSorted = useMemo(() => (data ? [...data.destinations].sort((a, b) => a.order - b.order) : []), [data]);
   const timelineSections = useMemo(() => (data ? buildTimelineEntries(data) : []), [data]);
+  const activeTabs = useMemo(() => (eggUnlocked ? [...TABS, { key: 'easteregg', label: 'Experiencias', icon: Sparkles }] : TABS), [eggUnlocked]);
 
   // Todo el theming pasa por variables CSS: cambiar de tema no toca ningún
   // componente, solo redefine estos valores en el elemento raíz y el resto
@@ -880,7 +964,10 @@ export default function TripPlannerApp() {
         <ComprasView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onToggleAcquired={toggleAcquired} />
       )}
       {tab === 'notas' && (
-        <NotasView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} />
+        <NotasView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onHeaderClick={handleNotesHeaderClick} />
+      )}
+      {tab === 'easteregg' && (
+        <EasterEggView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} />
       )}
     </>
   );
@@ -888,7 +975,7 @@ export default function TripPlannerApp() {
   return (
     <div className="min-h-screen w-full flex justify-center sm:py-10 sm:px-4" style={{ ...themeVars, backgroundColor: 'var(--ink)' }}>
       <GlobalStyle />
-      <ResponsiveAppShell tabs={TABS} tab={tab} setTab={setTab} theme={theme} setTheme={setTheme} isOtaku={isOtaku}>
+      <ResponsiveAppShell tabs={activeTabs} tab={tab} setTab={setTab} theme={theme} setTheme={setTheme} isOtaku={isOtaku}>
         {activeView}
       </ResponsiveAppShell>
       <SheetRouter sheet={sheet} onClose={closeSheet} onSave={handleSave} onDeleteEntity={handleDeleteEntity} destinations={destinationsSorted} places={data.places} />
