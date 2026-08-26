@@ -35,7 +35,7 @@ function DestinationForm({ initial, mode, onSubmit, onDelete }) {
         <div className="flex gap-2">
           {['sky', 'gold', 'sage'].map((c) => (
             <button key={c} type="button" onClick={() => setV((s) => ({ ...s, color: c }))}
-              className="w-8 h-8 rounded-full" style={{ backgroundColor: colorVar(c), border: v.color === c ? '2.5px solid var(--ink)' : '2.5px solid transparent' }} />
+              className="w-8 h-8 rounded-full" style={{ backgroundColor: colorVar(c), border: v.color === c ? '2.5px solid var(--text)' : '2.5px solid transparent' }} />
           ))}
         </div>
       </Field>

@@ -12,7 +12,7 @@ function DeleteButton({ onDelete }) {
     return (
       <div className="flex items-center gap-1">
         <button onClick={onDelete} className="font-mono text-xs px-2 py-1 rounded-lg bg-stamp text-paper font-semibold">Sí</button>
-        <button onClick={() => setConfirming(false)} className="font-mono text-xs px-2 py-1 rounded-lg text-ink" style={{ backgroundColor: 'rgba(var(--ink-rgb),0.08)' }}>No</button>
+        <button onClick={() => setConfirming(false)} className="font-mono text-xs px-2 py-1 rounded-lg text-ink" style={{ backgroundColor: 'rgba(var(--line-rgb),0.08)' }}>No</button>
       </div>
     );
   }

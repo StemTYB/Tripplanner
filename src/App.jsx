@@ -36,16 +36,26 @@ function GlobalStyle() {
       @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
 
       :root {
+        /* Superficies */
         --paper: #FAF6EE;
         --paper-dim: #F1EAD9;
         --ink: #1C2541;
+        /* Texto */
+        --text: #1C2541;
+        --text-inverse: #FAF6EE;
+        /* Acentos */
         --stamp: #E4572E;
         --gold: #D9A441;
         --sky: #3B6EA5;
         --sage: #3E7C59;
-        --ink-rgb: 28,37,65;
-        --paper-rgb: 250,246,238;
+        /* Tintes (bordes / overlay) */
+        --line-rgb: 28,37,65;
+        --inverse-rgb: 250,246,238;
+        --scrim-rgb: 28,37,65;
         --stamp-rgb: 228,87,46;
+        /* Campos / chips */
+        --field-bg: #FFFFFF;
+        --field-text: #1C2541;
         --font-display: 'Space Grotesk', sans-serif;
         --font-body: 'Manrope', sans-serif;
       }
@@ -63,8 +73,8 @@ function GlobalStyle() {
       .bg-gold { background-color: var(--gold); }
       .bg-sky { background-color: var(--sky); }
       .bg-sage { background-color: var(--sage); }
-      .text-paper { color: var(--paper); }
-      .text-ink { color: var(--ink); }
+      .text-paper { color: var(--text-inverse); }
+      .text-ink { color: var(--text); }
       .text-stamp { color: var(--stamp); }
 
       .field-input, .field-select, .field-textarea {
@@ -72,9 +82,9 @@ function GlobalStyle() {
         border-radius: 0.85rem;
         padding: 0.65rem 0.9rem;
         font-size: 0.875rem;
-        color: var(--ink);
-        background: #fff;
-        border: 1.5px solid rgba(var(--ink-rgb),0.14);
+        color: var(--field-text);
+        background: var(--field-bg);
+        border: 1.5px solid rgba(var(--line-rgb),0.14);
         outline: none;
         font-family: var(--font-body);
         transition: border-color .15s, box-shadow .15s;
@@ -92,13 +102,13 @@ function GlobalStyle() {
         font-weight: 600;
         padding: 0.4rem 0.8rem;
         border-radius: 999px;
-        border: 1.5px solid rgba(var(--ink-rgb),0.14);
-        color: var(--ink);
+        border: 1.5px solid rgba(var(--line-rgb),0.14);
+        color: var(--field-text);
         white-space: nowrap;
         flex-shrink: 0;
-        background: #fff;
+        background: var(--field-bg);
       }
-      .chip.active { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+      .chip.active { background: var(--ink); border-color: var(--ink); color: var(--text-inverse); }
 
       @keyframes sheetUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
       .animate-sheet-up { animation: sheetUp .2s ease-out; }
@@ -122,16 +132,23 @@ const THEMES = {
   default: {
     label: 'Clásico',
     ink: '#1C2541', paper: '#FAF6EE', paperDim: '#F1EAD9',
+    text: '#1C2541', textInverse: '#FAF6EE',
     stamp: '#E4572E', gold: '#D9A441', sky: '#3B6EA5', sage: '#3E7C59',
-    inkRgb: '28,37,65', paperRgb: '250,246,238', stampRgb: '228,87,46',
+    lineRgb: '28,37,65', inverseRgb: '250,246,238', scrimRgb: '28,37,65', stampRgb: '228,87,46',
+    fieldBg: '#FFFFFF', fieldText: '#1C2541',
     fontDisplay: "'Space Grotesk', sans-serif",
     fontBody: "'Manrope', sans-serif",
   },
   otaku: {
     label: 'Otaku mode',
-    ink: '#241B4D', paper: '#FFF3FA', paperDim: '#F5E3FF',
-    stamp: '#FF2D95', gold: '#F2A900', sky: '#0091D9', sage: '#00A06B',
-    inkRgb: '36,27,77', paperRgb: '255,243,250', stampRgb: '255,45,149',
+    // Tema oscuro estilo head-unit Y2K: base casi negra, texto claro suave y
+    // acentos neón (rosa/cian/oro/verde) reservados para indicadores e iconos,
+    // nunca como rellenos grandes. Evita #0000 y #fff puros para lectura nocturna.
+    ink: '#0E1020', paper: '#12141F', paperDim: '#1A1D33',
+    text: '#E9E4F5', textInverse: '#E9E4F5',
+    stamp: '#FF3E9A', gold: '#FFC23E', sky: '#35C4F5', sage: '#3ED598',
+    lineRgb: '233,228,245', inverseRgb: '233,228,245', scrimRgb: '14,16,32', stampRgb: '255,62,154',
+    fieldBg: '#1A1D33', fieldText: '#E9E4F5',
     fontDisplay: "'M PLUS Rounded 1c', sans-serif",
     fontBody: "'M PLUS Rounded 1c', sans-serif",
   },
@@ -231,14 +248,14 @@ function HeroCard({ trip, onEdit }) {
           <h1 className="font-display text-2xl font-bold leading-tight mt-1 truncate text-paper">{trip.name}</h1>
           <p className="font-mono text-xs mt-1 text-paper" style={{ opacity: 0.7 }}>{fmtDate(trip.startDate)} — {fmtDate(trip.endDate)}</p>
         </div>
-        <button onClick={onEdit} className="shrink-0 p-2 rounded-full" style={{ backgroundColor: 'rgba(var(--paper-rgb),0.14)' }} aria-label="Editar viaje">
+        <button onClick={onEdit} className="shrink-0 p-2 rounded-full" style={{ backgroundColor: 'rgba(var(--inverse-rgb),0.14)' }} aria-label="Editar viaje">
           <Pencil size={14} className="text-paper" />
         </button>
       </div>
       <div className="flex items-center gap-2 my-4">
-        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'rgba(var(--paper-rgb),0.4)' }} />
-        <span className="flex-1 border-t border-dashed" style={{ borderColor: 'rgba(var(--paper-rgb),0.3)' }} />
-        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'rgba(var(--paper-rgb),0.4)' }} />
+        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'rgba(var(--inverse-rgb),0.4)' }} />
+        <span className="flex-1 border-t border-dashed" style={{ borderColor: 'rgba(var(--inverse-rgb),0.3)' }} />
+        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'rgba(var(--inverse-rgb),0.4)' }} />
       </div>
       <div className="flex items-center justify-between">
         <div>
@@ -266,7 +283,7 @@ function StatsRow({ data }) {
   return (
     <div className="grid grid-cols-4 gap-2">
       {stats.map((s) => (
-        <div key={s.label} className="rounded-2xl bg-white border p-2.5 text-center" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+        <div key={s.label} className="rounded-2xl bg-paper border p-2.5 text-center" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
           <p className="font-display text-lg font-bold text-ink">{s.value}</p>
           <p className="font-mono text-xs text-ink" style={{ opacity: 0.5 }}>{s.label}</p>
         </div>
@@ -277,7 +294,7 @@ function StatsRow({ data }) {
 
 function DestinationRow({ d, isFirst, isLast, onEdit, onDelete, onMove }) {
   return (
-    <div className="rounded-2xl p-3.5 bg-white border flex items-center gap-3" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+    <div className="rounded-2xl p-3.5 bg-paper border flex items-center gap-3" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
       <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: colorVar(d.color) }}>
         <MapPin size={16} className="text-paper" />
       </span>
@@ -299,7 +316,7 @@ function DestinationRow({ d, isFirst, isLast, onEdit, onDelete, onMove }) {
 
 function StayRow({ s, destName, onEdit, onDelete }) {
   return (
-    <div className="rounded-2xl p-3.5 bg-white border flex items-center gap-3" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+    <div className="rounded-2xl p-3.5 bg-paper border flex items-center gap-3" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
       <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gold"><BedDouble size={16} className="text-paper" /></span>
       <button onClick={onEdit} className="flex-1 min-w-0 text-left">
         <p className="font-display font-semibold text-ink text-sm truncate">{s.name}</p>
@@ -315,7 +332,7 @@ function StayRow({ s, destName, onEdit, onDelete }) {
 
 function StayMarker({ s, role, onEdit }) {
   return (
-    <button onClick={onEdit} className="w-full flex items-center gap-3 rounded-2xl p-3 bg-paper-dim border text-left" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+    <button onClick={onEdit} className="w-full flex items-center gap-3 rounded-2xl p-3 bg-paper-dim border text-left" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
       <span className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-gold"><BedDouble size={14} className="text-paper" /></span>
       <div className="min-w-0">
         <p className="font-display font-semibold text-ink text-sm truncate">{role === 'in' ? 'Check-in' : 'Check-out'} · {s.name}</p>
@@ -329,7 +346,7 @@ function TransportTicket({ t, role, onEdit, onDelete }) {
   const cfg = TRANSPORT_TYPES[t.type];
   const Icon = cfg.icon;
   return (
-    <div className="rounded-2xl p-4 bg-paper-dim border" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+    <div className="rounded-2xl p-4 bg-paper-dim border" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="w-7 h-7 rounded-full flex items-center justify-center bg-sky shrink-0"><Icon size={14} className="text-paper" /></span>
@@ -349,9 +366,9 @@ function TransportTicket({ t, role, onEdit, onDelete }) {
           <p className="font-mono text-xs text-ink" style={{ opacity: 0.55 }}>{t.depTime}</p>
         </div>
         <div className="flex-1 flex items-center px-1">
-          <span className="flex-1 border-t border-dashed" style={{ borderColor: 'rgba(var(--ink-rgb),0.25)' }} />
+          <span className="flex-1 border-t border-dashed" style={{ borderColor: 'rgba(var(--line-rgb),0.25)' }} />
           <Icon size={12} className="mx-1 text-ink shrink-0" style={{ opacity: 0.4 }} />
-          <span className="flex-1 border-t border-dashed" style={{ borderColor: 'rgba(var(--ink-rgb),0.25)' }} />
+          <span className="flex-1 border-t border-dashed" style={{ borderColor: 'rgba(var(--line-rgb),0.25)' }} />
         </div>
         <div className="text-right min-w-0">
           <p className="font-display font-semibold text-ink text-sm truncate">{t.to}</p>
@@ -367,7 +384,7 @@ function ActivityCard({ a, onEdit, onDelete, onShift }) {
   const cat = PLACE_CATEGORIES[a.category] || PLACE_CATEGORIES.otro;
   const Icon = cat.icon;
   return (
-    <div className="rounded-2xl p-3.5 bg-white border flex gap-3" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+    <div className="rounded-2xl p-3.5 bg-paper border flex gap-3" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
       <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: colorVar(cat.color) }}>
         <Icon size={15} className="text-paper" />
       </span>
@@ -394,7 +411,7 @@ function PlaceRow({ p, onEdit, onDelete, onToggle }) {
   const cat = PLACE_CATEGORIES[p.category] || PLACE_CATEGORIES.otro;
   const Icon = cat.icon;
   return (
-    <div className="rounded-2xl p-3.5 bg-white border flex items-center gap-3" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)', opacity: p.visited ? 0.6 : 1 }}>
+    <div className="rounded-2xl p-3.5 bg-paper border flex items-center gap-3" style={{ borderColor: 'rgba(var(--line-rgb),0.1)', opacity: p.visited ? 0.6 : 1 }}>
       <button onClick={onToggle} className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: colorVar(cat.color) }} aria-label="Marcar como visitado">
         {p.visited ? <CheckCircle2 size={16} className="text-paper" /> : <Icon size={15} className="text-paper" />}
       </button>
@@ -416,7 +433,7 @@ function ShoppingRow({ item, onEdit, onDelete, onToggle }) {
   const actual = hasActual ? Number(item.actualPrice) : null;
   const diff = actual != null ? actual - est : null;
   return (
-    <div className="rounded-2xl p-3.5 bg-white border flex gap-3" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)', opacity: item.acquired ? 0.65 : 1 }}>
+    <div className="rounded-2xl p-3.5 bg-paper border flex gap-3" style={{ borderColor: 'rgba(var(--line-rgb),0.1)', opacity: item.acquired ? 0.65 : 1 }}>
       <button onClick={onToggle} className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-gold" aria-label="Marcar como conseguido">
         {item.acquired ? <CheckCircle2 size={16} className="text-paper" /> : <ShoppingBag size={15} className="text-paper" />}
       </button>
@@ -449,11 +466,11 @@ function ShoppingRow({ item, onEdit, onDelete, onToggle }) {
 function GapFiller({ gap }) {
   return (
     <div className="px-4 py-3 flex items-center gap-3">
-      <div className="flex-1 border-t border-dashed" style={{ borderColor: 'rgba(var(--ink-rgb),0.15)' }} />
+      <div className="flex-1 border-t border-dashed" style={{ borderColor: 'rgba(var(--line-rgb),0.15)' }} />
       <p className="font-mono text-xs text-ink shrink-0" style={{ opacity: 0.5 }}>
         {gap.nights} {gap.nights === 1 ? 'noche libre' : 'noches libres'}{gap.destName ? ` en ${gap.destName}` : ''}
       </p>
-      <div className="flex-1 border-t border-dashed" style={{ borderColor: 'rgba(var(--ink-rgb),0.15)' }} />
+      <div className="flex-1 border-t border-dashed" style={{ borderColor: 'rgba(var(--line-rgb),0.15)' }} />
     </div>
   );
 }
@@ -461,10 +478,10 @@ function GapFiller({ gap }) {
 function DayNav({ days }) {
   if (days.length === 0) return null;
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-none px-4 py-3 sticky top-0 bg-paper z-10 border-b" style={{ borderColor: 'rgba(var(--ink-rgb),0.08)' }}>
+    <div className="flex gap-2 overflow-x-auto scrollbar-none px-4 py-3 sticky top-0 bg-paper z-10 border-b" style={{ borderColor: 'rgba(var(--line-rgb),0.08)' }}>
       {days.map((date) => (
         <button key={date} onClick={() => { const el = document.getElementById('day-' + date); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
-          className="flex flex-col items-center justify-center shrink-0 rounded-2xl px-3 py-1.5 bg-white" style={{ border: '1.5px solid rgba(var(--ink-rgb),0.12)' }}>
+          className="flex flex-col items-center justify-center shrink-0 rounded-2xl px-3 py-1.5 bg-paper" style={{ border: '1.5px solid rgba(var(--line-rgb),0.12)' }}>
           <span className="font-mono text-xs font-semibold text-ink">{fmtDate(date, { day: 'numeric', month: 'short' })}</span>
         </button>
       ))}
@@ -496,7 +513,7 @@ function DaySection({ entry, data, onEdit, onDelete, onShiftDay, onAddActivity }
         ))}
         <button onClick={() => onAddActivity(entry.date)}
           className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed text-xs font-semibold text-ink"
-          style={{ borderColor: 'rgba(var(--ink-rgb),0.2)', opacity: 0.7 }}>
+          style={{ borderColor: 'rgba(var(--line-rgb),0.2)', opacity: 0.7 }}>
           <Plus size={14} /> Añadir actividad
         </button>
       </div>
@@ -559,7 +576,7 @@ function ItinerarioView({ data, sections, openAdd, openEdit, onDelete, onShiftAc
         <div className="px-4 pt-6 space-y-3">
           <EmptyState icon={Calendar} title="Sin itinerario todavía" subtitle="Añade tu primera actividad, alojamiento o transporte" />
           <button onClick={() => openAdd('activity', { date: data.trip.startDate, time: '', title: '', destId: data.destinations[0]?.id || '', category: 'otro', placeId: '', note: '' })}
-            className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl border border-dashed text-sm font-semibold text-ink" style={{ borderColor: 'rgba(var(--ink-rgb),0.2)', opacity: 0.7 }}>
+            className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl border border-dashed text-sm font-semibold text-ink" style={{ borderColor: 'rgba(var(--line-rgb),0.2)', opacity: 0.7 }}>
             <Plus size={15} /> Añadir actividad
           </button>
         </div>
@@ -601,15 +618,15 @@ function MapaView({ data, destinations, openEdit }) {
       </div>
 
       <div className="px-4">
-        <div className="relative w-full rounded-3xl overflow-hidden bg-paper-dim border" style={{ paddingBottom: '120%', borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+        <div className="relative w-full rounded-3xl overflow-hidden bg-paper-dim border" style={{ paddingBottom: '120%', borderColor: 'rgba(var(--line-rgb),0.1)' }}>
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
-            <polyline points={destinations.map((d) => `${d.mapPos.x},${d.mapPos.y}`).join(' ')} fill="none" strokeWidth="0.5" strokeDasharray="1.4 1.4" strokeOpacity="0.3" style={{ stroke: 'var(--ink)' }} />
+            <polyline points={destinations.map((d) => `${d.mapPos.x},${d.mapPos.y}`).join(' ')} fill="none" strokeWidth="0.5" strokeDasharray="1.4 1.4" strokeOpacity="0.3" style={{ stroke: 'var(--text)' }} />
           </svg>
           {pins.map((p) => (
             <button key={p.type + p.id} onClick={() => openEdit(p.type, p.item)} className="absolute flex flex-col items-center"
               style={{ left: p.mapPos.x + '%', top: p.mapPos.y + '%', transform: 'translate(-50%,-100%)' }}>
               <span className={'flex items-center justify-center rounded-full shadow-md ' + (p.kind === 'destino' ? 'w-7 h-7' : 'w-4 h-4')} style={{ backgroundColor: colorVar(p.color) }}>
-                {p.kind === 'destino' && <MapPin size={13} style={{ color: 'var(--paper)' }} />}
+                {p.kind === 'destino' && <MapPin size={13} style={{ color: 'var(--text-inverse)' }} />}
               </span>
               {p.kind === 'destino' && (
                 <span className="font-mono text-xs font-semibold text-ink mt-1 bg-paper px-1.5 py-0.5 rounded-full shadow-sm">{p.name}</span>
@@ -617,7 +634,7 @@ function MapaView({ data, destinations, openEdit }) {
             </button>
           ))}
         </div>
-        <p className="font-mono text-xs text-center mt-2" style={{ opacity: 0.4, color: 'var(--ink)' }}>Vista previa · el mapa real se conectará más adelante</p>
+        <p className="font-mono text-xs text-center mt-2" style={{ opacity: 0.4, color: 'var(--text)' }}>Vista previa · el mapa real se conectará más adelante</p>
       </div>
 
       <div className="px-4 mt-6 space-y-6">
@@ -630,7 +647,7 @@ function MapaView({ data, destinations, openEdit }) {
               </h3>
               <div className="space-y-2">
                 {items.map((p) => (
-                  <button key={p.type + p.id} onClick={() => openEdit(p.type, p.item)} className="w-full flex items-center gap-3 rounded-xl p-2.5 bg-white border text-left" style={{ borderColor: 'rgba(var(--ink-rgb),0.08)' }}>
+                  <button key={p.type + p.id} onClick={() => openEdit(p.type, p.item)} className="w-full flex items-center gap-3 rounded-xl p-2.5 bg-paper border text-left" style={{ borderColor: 'rgba(var(--line-rgb),0.08)' }}>
                     <span className="w-6 h-6 rounded-full shrink-0" style={{ backgroundColor: colorVar(p.color) }} />
                     <div className="min-w-0">
                       <p className="text-ink text-sm font-semibold truncate">{p.name}</p>
@@ -681,7 +698,7 @@ function LugaresView({ data, destinations, openAdd, openEdit, onDelete, onToggle
         })}
         {filtered.length === 0 && <EmptyState icon={Compass} title="Nada por aquí" subtitle="Prueba otro filtro o añade un lugar nuevo" />}
         <button onClick={() => openAdd('place', { destId: destinations[0]?.id || '', name: '', category: 'otro', note: '', visited: false, mapPos: { x: 50, y: 50 } })}
-          className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl border border-dashed text-sm font-semibold text-ink" style={{ borderColor: 'rgba(var(--ink-rgb),0.2)', opacity: 0.7 }}>
+          className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl border border-dashed text-sm font-semibold text-ink" style={{ borderColor: 'rgba(var(--line-rgb),0.2)', opacity: 0.7 }}>
           <Plus size={15} /> Añadir lugar
         </button>
       </div>
@@ -701,15 +718,15 @@ function ComprasView({ data, openAdd, openEdit, onDelete, onToggleAcquired }) {
       <SectionHeader title="Lista de compras" onAdd={() => openAdd('shopping', { name: '', zone: '', summary: '', estPrice: '', actualPrice: '', acquired: false })} />
 
       <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-2xl bg-white border p-2.5 text-center" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+        <div className="rounded-2xl bg-paper border p-2.5 text-center" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
           <p className="font-display text-lg font-bold text-ink">{acquiredCount}/{data.shopping.length}</p>
           <p className="font-mono text-xs text-ink" style={{ opacity: 0.5 }}>Conseguidos</p>
         </div>
-        <div className="rounded-2xl bg-white border p-2.5 text-center" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+        <div className="rounded-2xl bg-paper border p-2.5 text-center" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
           <p className="font-display text-lg font-bold text-ink">¥{estPending.toLocaleString('es-MX')}</p>
           <p className="font-mono text-xs text-ink" style={{ opacity: 0.5 }}>Por gastar (aprox.)</p>
         </div>
-        <div className="rounded-2xl bg-white border p-2.5 text-center" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+        <div className="rounded-2xl bg-paper border p-2.5 text-center" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
           <p className="font-display text-lg font-bold text-ink">¥{spent.toLocaleString('es-MX')}</p>
           <p className="font-mono text-xs text-ink" style={{ opacity: 0.5 }}>Gastado real</p>
         </div>
@@ -737,7 +754,7 @@ function NotasView({ data, openAdd, openEdit, onDelete, onHeaderClick }) {
       <SectionHeader title="Notas" onAdd={() => openAdd('note', { title: '', content: '' })} onTitleClick={onHeaderClick} />
       {data.notes.length === 0 && <EmptyState icon={StickyNote} title="Sin notas todavía" subtitle="Guarda ideas, recordatorios o cosas que no quieres olvidar" />}
       {data.notes.map((n) => (
-        <div key={n.id} className="rounded-2xl p-4 bg-white border" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+        <div key={n.id} className="rounded-2xl p-4 bg-paper border" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
           <div className="flex items-start justify-between gap-2">
             <button onClick={() => openEdit('note', n)} className="text-left">
               <h3 className="font-display font-semibold text-ink text-sm">{n.title}</h3>
@@ -756,7 +773,7 @@ function NotasView({ data, openAdd, openEdit, onDelete, onHeaderClick }) {
 
 function ExperienceRow({ x, onEdit, onDelete }) {
   return (
-    <div className="rounded-2xl p-4 bg-white border" style={{ borderColor: 'rgba(var(--ink-rgb),0.1)' }}>
+    <div className="rounded-2xl p-4 bg-paper border" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
       <div className="flex items-start justify-between gap-2">
         <button onClick={onEdit} className="text-left">
           <h3 className="font-display font-semibold text-ink text-sm">{x.name}</h3>
@@ -803,10 +820,18 @@ export default function TripPlannerApp() {
   const [data, setData] = useState(null);
   const [tab, setTab] = useState('resumen');
   const [sheet, setSheet] = useState(null);
-  const [theme, setTheme] = useState('default');
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('tripPlannerTheme');
+    return saved === 'otaku' ? 'otaku' : 'default';
+  });
   const [eggUnlocked, setEggUnlocked] = useState(false);
   const notesTap = useRef({ count: 0, last: 0 });
   const notesTimeoutRef = useRef(null);
+
+  // Persiste la elección de tema para que sobreviva a refrescos.
+  useEffect(() => {
+    localStorage.setItem('tripPlannerTheme', theme);
+  }, [theme]);
 
   // Al salir de Otaku Mode se resetea el Easter Egg: vuelve la pestaña Notas
   // y se limpia el contador de toques (previene reactivaciones accidentales).
@@ -931,8 +956,10 @@ export default function TripPlannerApp() {
   const t = THEMES[theme];
   const themeVars = {
     '--ink': t.ink, '--paper': t.paper, '--paper-dim': t.paperDim,
+    '--text': t.text, '--text-inverse': t.textInverse,
     '--stamp': t.stamp, '--gold': t.gold, '--sky': t.sky, '--sage': t.sage,
-    '--ink-rgb': t.inkRgb, '--paper-rgb': t.paperRgb, '--stamp-rgb': t.stampRgb,
+    '--line-rgb': t.lineRgb, '--inverse-rgb': t.inverseRgb, '--scrim-rgb': t.scrimRgb, '--stamp-rgb': t.stampRgb,
+    '--field-bg': t.fieldBg, '--field-text': t.fieldText,
     '--font-display': t.fontDisplay, '--font-body': t.fontBody,
   };
   const isOtaku = theme === 'otaku';
@@ -941,7 +968,7 @@ export default function TripPlannerApp() {
     return (
       <div className="min-h-screen w-full flex items-center justify-center" style={{ ...themeVars, backgroundColor: 'var(--ink)' }}>
         <GlobalStyle />
-        <p className="font-mono text-sm" style={{ color: 'var(--paper)', opacity: 0.7 }}>Cargando viaje…</p>
+        <p className="font-mono text-sm" style={{ color: 'var(--text-inverse)', opacity: 0.7 }}>Cargando viaje…</p>
       </div>
     );
   }
