@@ -23,6 +23,7 @@ import { SheetRouter } from './components/forms/SheetRouter';
 import { ResponsiveAppShell } from './components/layout/ResponsiveAppShell';
 import { DeleteButton } from './components/ui/DeleteButton';
 import { EmptyState } from './components/ui/EmptyState';
+import { ItemImage } from './components/ui/ItemImage';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { colorVar, PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES } from './domain/tripConfig';
 
@@ -433,30 +434,33 @@ function ShoppingRow({ item, onEdit, onDelete, onToggle }) {
   const actual = hasActual ? Number(item.actualPrice) : null;
   const diff = actual != null ? actual - est : null;
   return (
-    <div className="rounded-2xl p-3.5 bg-paper border flex gap-3" style={{ borderColor: 'rgba(var(--line-rgb),0.1)', opacity: item.acquired ? 0.65 : 1 }}>
-      <button onClick={onToggle} className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-gold" aria-label="Marcar como conseguido">
-        {item.acquired ? <CheckCircle2 size={16} className="text-paper" /> : <ShoppingBag size={15} className="text-paper" />}
-      </button>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <button onClick={onEdit} className="min-w-0 text-left">
-            <p className="font-display font-semibold text-ink text-sm" style={{ textDecoration: item.acquired ? 'line-through' : 'none' }}>{item.name}</p>
-            {item.zone && <p className="font-mono text-xs text-ink truncate" style={{ opacity: 0.55 }}>{item.zone}</p>}
-          </button>
-          <div className="flex items-center gap-1 shrink-0">
-            <button onClick={onEdit} className="p-1 rounded text-ink" style={{ opacity: 0.5 }}><Pencil size={13} /></button>
-            <DeleteButton onDelete={onDelete} />
+    <div className="rounded-2xl bg-paper border overflow-hidden" style={{ borderColor: 'rgba(var(--line-rgb),0.1)', opacity: item.acquired ? 0.65 : 1 }}>
+      {item.imageUrl && <ItemImage src={item.imageUrl} alt={item.name} aspect="aspect-[4/3]" />}
+      <div className="p-3.5 flex gap-3">
+        <button onClick={onToggle} className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-gold" aria-label="Marcar como conseguido">
+          {item.acquired ? <CheckCircle2 size={16} className="text-paper" /> : <ShoppingBag size={15} className="text-paper" />}
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <button onClick={onEdit} className="min-w-0 text-left">
+              <p className="font-display font-semibold text-ink text-sm" style={{ textDecoration: item.acquired ? 'line-through' : 'none' }}>{item.name}</p>
+              {item.zone && <p className="font-mono text-xs text-ink truncate" style={{ opacity: 0.55 }}>{item.zone}</p>}
+            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button onClick={onEdit} className="p-1 rounded text-ink" style={{ opacity: 0.5 }}><Pencil size={13} /></button>
+              <DeleteButton onDelete={onDelete} />
+            </div>
           </div>
-        </div>
-        {item.summary && <p className="text-xs text-ink mt-1" style={{ opacity: 0.6 }}>{item.summary}</p>}
-        <div className="flex items-center gap-3 mt-2 flex-wrap">
-          <span className="font-mono text-xs text-ink" style={{ opacity: 0.5 }}>Aprox: ¥{est.toLocaleString('es-MX')}</span>
-          {hasActual && <span className="font-mono text-xs text-ink" style={{ opacity: 0.75 }}>Pagué: ¥{actual.toLocaleString('es-MX')}</span>}
-          {diff != null && diff !== 0 && (
-            <span className="font-mono text-xs font-semibold" style={{ color: diff > 0 ? 'var(--stamp)' : 'var(--sage)' }}>
-              {diff > 0 ? `+¥${diff.toLocaleString('es-MX')}` : `-¥${Math.abs(diff).toLocaleString('es-MX')}`}
-            </span>
-          )}
+          {item.summary && <p className="text-xs text-ink mt-1" style={{ opacity: 0.6 }}>{item.summary}</p>}
+          <div className="flex items-center gap-3 mt-2 flex-wrap">
+            <span className="font-mono text-xs text-ink" style={{ opacity: 0.5 }}>Aprox: ¥{est.toLocaleString('es-MX')}</span>
+            {hasActual && <span className="font-mono text-xs text-ink" style={{ opacity: 0.75 }}>Pagué: ¥{actual.toLocaleString('es-MX')}</span>}
+            {diff != null && diff !== 0 && (
+              <span className="font-mono text-xs font-semibold" style={{ color: diff > 0 ? 'var(--stamp)' : 'var(--sage)' }}>
+                {diff > 0 ? `+¥${diff.toLocaleString('es-MX')}` : `-¥${Math.abs(diff).toLocaleString('es-MX')}`}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -715,7 +719,7 @@ function ComprasView({ data, openAdd, openEdit, onDelete, onToggleAcquired }) {
 
   return (
     <div className="px-4 pt-4 pb-6 space-y-4">
-      <SectionHeader title="Lista de compras" onAdd={() => openAdd('shopping', { name: '', zone: '', summary: '', estPrice: '', actualPrice: '', acquired: false })} />
+      <SectionHeader title="Lista de compras" onAdd={() => openAdd('shopping', { name: '', zone: '', summary: '', estPrice: '', actualPrice: '', acquired: false, imageUrl: '' })} />
 
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-2xl bg-paper border p-2.5 text-center" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
@@ -773,22 +777,25 @@ function NotasView({ data, openAdd, openEdit, onDelete, onHeaderClick }) {
 
 function ExperienceRow({ x, onEdit, onDelete }) {
   return (
-    <div className="rounded-2xl p-4 bg-paper border" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
-      <div className="flex items-start justify-between gap-2">
-        <button onClick={onEdit} className="text-left">
-          <h3 className="font-display font-semibold text-ink text-sm">{x.name}</h3>
-          {(x.location || x.price) && (
-            <p className="font-mono text-xs text-ink truncate mt-0.5" style={{ opacity: 0.55 }}>
-              {[x.location, x.price].filter(Boolean).join(' · ')}
-            </p>
-          )}
-        </button>
-        <div className="flex items-center gap-1 shrink-0">
-          <button onClick={onEdit} className="p-1 rounded text-ink" style={{ opacity: 0.5 }}><Pencil size={13} /></button>
-          <DeleteButton onDelete={onDelete} />
+    <div className="rounded-2xl bg-paper border overflow-hidden" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
+      {x.imageUrl && <ItemImage src={x.imageUrl} alt={x.name} aspect="aspect-video" />}
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <button onClick={onEdit} className="text-left">
+            <h3 className="font-display font-semibold text-ink text-sm">{x.name}</h3>
+            {(x.location || x.price) && (
+              <p className="font-mono text-xs text-ink truncate mt-0.5" style={{ opacity: 0.55 }}>
+                {[x.location, x.price].filter(Boolean).join(' · ')}
+              </p>
+            )}
+          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button onClick={onEdit} className="p-1 rounded text-ink" style={{ opacity: 0.5 }}><Pencil size={13} /></button>
+            <DeleteButton onDelete={onDelete} />
+          </div>
         </div>
+        {x.description && <p className="text-sm text-ink mt-1.5 leading-relaxed" style={{ opacity: 0.7 }}>{x.description}</p>}
       </div>
-      {x.description && <p className="text-sm text-ink mt-1.5 leading-relaxed" style={{ opacity: 0.7 }}>{x.description}</p>}
     </div>
   );
 }
@@ -803,7 +810,7 @@ function EasterEggView({ data, openAdd, openEdit, onDelete }) {
         <Sparkles size={18} className="text-stamp" />
         <span className="font-display text-lg font-bold text-ink">Experiencias secretas</span>
       </div>
-      <SectionHeader title="Easter Egg" onAdd={() => openAdd('experience', { name: '', location: '', price: '', description: '' })} addLabel="Añadir experiencia" />
+      <SectionHeader title="Easter Egg" onAdd={() => openAdd('experience', { name: '', location: '', price: '', description: '', imageUrl: '' })} addLabel="Añadir experiencia" />
       {data.experiences.length === 0 && <EmptyState icon={Sparkles} title="Sin experiencias todavía" subtitle="Guarda aquí esos momentos únicos del viaje" />}
       {data.experiences.map((x) => (
         <ExperienceRow key={x.id} x={x} onEdit={() => openEdit('experience', x)} onDelete={() => onDelete('experiences', x.id)} />

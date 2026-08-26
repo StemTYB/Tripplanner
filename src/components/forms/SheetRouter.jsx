@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { Field } from '../ui/Field';
 import { FormActions } from '../ui/FormActions';
+import { ItemImage } from '../ui/ItemImage';
 import { Sheet } from '../ui/Sheet';
 import { colorVar, PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES } from '../../domain/tripConfig';
 
@@ -181,6 +182,8 @@ function ShoppingForm({ initial, mode, onSubmit, onDelete }) {
     <div>
       <Field label="Artículo"><input className="field-input" value={v.name} onChange={set('name')} placeholder="Ej. Manga de Chainsaw Man" /></Field>
       <Field label="Zona / dónde conseguirlo"><input className="field-input" value={v.zone} onChange={set('zone')} placeholder="Ej. Akihabara, Book-Off, online..." /></Field>
+      <Field label="URL de imagen"><input className="field-input" value={v.imageUrl || ''} onChange={set('imageUrl')} placeholder="https://..." /></Field>
+      {v.imageUrl && <ItemImage src={v.imageUrl} alt={v.name} aspect="aspect-video" className="mb-4" />}
       <Field label="Resumen"><textarea className="field-textarea" value={v.summary} onChange={set('summary')} placeholder="Detalles, edición, tallas, qué buscar..." /></Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Precio aprox. (¥)"><input type="number" inputMode="decimal" className="field-input" value={v.estPrice} onChange={set('estPrice')} placeholder="0" /></Field>
@@ -202,6 +205,8 @@ function ExperienceForm({ initial, mode, onSubmit, onDelete }) {
     <div>
       <Field label="Nombre de la experiencia"><input className="field-input" value={v.name} onChange={set('name')} placeholder="Ej. Torneo arcade en Akihabara" /></Field>
       <Field label="Lugar"><input className="field-input" value={v.location} onChange={set('location')} placeholder="Ej. Hi-tech Land, Taito Station" /></Field>
+      <Field label="URL de imagen"><input className="field-input" value={v.imageUrl || ''} onChange={set('imageUrl')} placeholder="https://..." /></Field>
+      {v.imageUrl && <ItemImage src={v.imageUrl} alt={v.name} aspect="aspect-video" className="mb-4" />}
       <Field label="Precio aprox. o real"><input className="field-input" value={v.price} onChange={set('price')} placeholder="Ej. ¥800 · gratis" /></Field>
       <Field label="Descripción"><textarea className="field-textarea" value={v.description} onChange={set('description')} style={{ minHeight: '8rem' }} /></Field>
       <FormActions mode={mode} onSave={() => onSubmit(v)} onDelete={onDelete} disabled={!v.name} />
