@@ -19,15 +19,17 @@ function ThemeToggle({ theme, setTheme }) {
   );
 }
 
-function TopBar({ tabs, tab, theme, setTheme }) {
+function TopBar({ tabs, tab, theme, setTheme, onNotesTap }) {
   const current = tabs.find((t) => t.key === tab);
+  const isNotas = current.key === 'notas';
   return (
     <header className="flex items-center justify-between gap-2 px-4 py-3.5 border-b lg:hidden" style={{ borderColor: 'rgba(var(--line-rgb),0.08)' }}>
       <div className="flex items-center gap-2 min-w-0">
         <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-ink shrink-0"><Compass size={16} className="text-paper" /></span>
         <div className="min-w-0">
           <p className="font-mono text-xs text-ink" style={{ opacity: 0.45 }}>Trip Planner</p>
-          <p className="font-display font-bold text-ink text-sm leading-none mt-0.5 truncate">{current.label}</p>
+          <p className={'font-display font-bold text-ink text-sm leading-none mt-0.5 truncate' + (isNotas ? ' cursor-pointer select-none' : '')}
+             onClick={isNotas ? onNotesTap : undefined}>{current.label}</p>
         </div>
       </div>
       <ThemeToggle theme={theme} setTheme={setTheme} />
@@ -35,7 +37,7 @@ function TopBar({ tabs, tab, theme, setTheme }) {
   );
 }
 
-function DesktopSidebar({ tabs, tab, setTab, theme, setTheme }) {
+function DesktopSidebar({ tabs, tab, setTab, theme, setTheme, onNotesTap }) {
   return (
     <aside className="hidden lg:flex min-h-0 flex-col bg-ink text-paper p-5">
       <div className="flex items-center gap-3 mb-8">
@@ -55,7 +57,7 @@ function DesktopSidebar({ tabs, tab, setTab, theme, setTheme }) {
           return (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => { setTab(t.key); if (t.key === 'notas') onNotesTap?.(); }}
               className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left transition-colors"
               style={{
                 backgroundColor: active ? 'var(--paper)' : 'transparent',
@@ -80,14 +82,14 @@ function DesktopSidebar({ tabs, tab, setTab, theme, setTheme }) {
   );
 }
 
-function BottomNav({ tabs, tab, setTab }) {
+function BottomNav({ tabs, tab, setTab, onNotesTap }) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch border-t bg-paper py-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] lg:hidden" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
       {tabs.map((t) => {
         const Icon = t.icon;
         const active = tab === t.key;
         return (
-          <button key={t.key} onClick={() => setTab(t.key)} className="flex-1 min-w-0 flex flex-col items-center justify-center gap-1 px-0.5 py-0.5 rounded-xl">
+          <button key={t.key} onClick={() => { setTab(t.key); if (t.key === 'notas') onNotesTap?.(); }} className="flex-1 min-w-0 flex flex-col items-center justify-center gap-1 px-0.5 py-0.5 rounded-xl">
             <Icon size={19} style={{ color: active ? 'var(--stamp)' : 'var(--text)', opacity: active ? 1 : 0.45 }} />
             <span className="font-mono w-full text-center truncate" style={{ fontSize: '10px', color: active ? 'var(--stamp)' : 'var(--text)', opacity: active ? 1 : 0.45 }}>{t.label}</span>
           </button>
@@ -97,7 +99,7 @@ function BottomNav({ tabs, tab, setTab }) {
   );
 }
 
-function ResponsiveAppShell({ tabs, tab, setTab, theme, setTheme, isOtaku, children }) {
+function ResponsiveAppShell({ tabs, tab, setTab, theme, setTheme, isOtaku, onNotesTap, children }) {
   return (
     <div
       className="w-full sm:max-w-md lg:max-w-6xl bg-paper min-h-screen sm:rounded-3xl sm:shadow-2xl overflow-hidden flex flex-col lg:grid lg:grid-cols-[17rem_minmax(0,1fr)]"
@@ -107,12 +109,12 @@ function ResponsiveAppShell({ tabs, tab, setTab, theme, setTheme, isOtaku, child
         backgroundSize: '16px 16px',
       }}
     >
-      <TopBar tabs={tabs} tab={tab} theme={theme} setTheme={setTheme} />
-      <DesktopSidebar tabs={tabs} tab={tab} setTab={setTab} theme={theme} setTheme={setTheme} />
+      <TopBar tabs={tabs} tab={tab} theme={theme} setTheme={setTheme} onNotesTap={onNotesTap} />
+      <DesktopSidebar tabs={tabs} tab={tab} setTab={setTab} theme={theme} setTheme={setTheme} onNotesTap={onNotesTap} />
       <main className="flex-1 overflow-y-auto pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:min-h-[calc(100vh-5rem)] lg:max-h-[calc(100vh-5rem)] lg:px-5 lg:py-6 lg:pb-6">
         {children}
       </main>
-      <BottomNav tabs={tabs} tab={tab} setTab={setTab} />
+      <BottomNav tabs={tabs} tab={tab} setTab={setTab} onNotesTap={onNotesTap} />
     </div>
   );
 }

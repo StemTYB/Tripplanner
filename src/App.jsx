@@ -1002,7 +1002,7 @@ export default function TripPlannerApp() {
   return (
     <div className="min-h-screen w-full flex justify-center sm:py-10 sm:px-4" style={{ ...themeVars, backgroundColor: 'var(--ink)' }}>
       <GlobalStyle />
-      <ResponsiveAppShell tabs={activeTabs} tab={tab} setTab={setTab} theme={theme} setTheme={setTheme} isOtaku={isOtaku}>
+      <ResponsiveAppShell tabs={activeTabs} tab={tab} setTab={setTab} theme={theme} setTheme={setTheme} isOtaku={isOtaku} onNotesTap={handleNotesHeaderClick}>
         {activeView}
       </ResponsiveAppShell>
       <SheetRouter sheet={sheet} onClose={closeSheet} onSave={handleSave} onDeleteEntity={handleDeleteEntity} destinations={destinationsSorted} places={data.places} />

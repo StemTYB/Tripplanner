@@ -1,6 +1,7 @@
 name = "trip-planner"
 main = "worker/index.js"
 compatibility_date = "2024-09-23"
+account_id = "40d01e30483f118dd25ce563b09cda3d"
 
 # El Worker corre PRIMERO para toda petición (incluidas las de archivos
 # estáticos); dentro de worker/index.js, todo lo que no sea /api/* se
