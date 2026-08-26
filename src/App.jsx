@@ -37,39 +37,84 @@ function GlobalStyle() {
       @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
 
       :root {
-        /* Superficies */
-        --paper: #FAF6EE;
-        --paper-dim: #F1EAD9;
-        --ink: #1C2541;
+        /* Superficies (translúcidas = cristal sobre el fondo líquido) */
+        --paper: rgba(255,255,255,0.08);
+        --paper-dim: rgba(255,255,255,0.13);
+        --ink: #10142E;
         /* Texto */
-        --text: #1C2541;
-        --text-inverse: #FAF6EE;
+        --text: #F4F6FF;
+        --text-inverse: #FFFFFF;
         /* Acentos */
-        --stamp: #E4572E;
-        --gold: #D9A441;
-        --sky: #3B6EA5;
-        --sage: #3E7C59;
-        /* Tintes (bordes / overlay) */
-        --line-rgb: 28,37,65;
-        --inverse-rgb: 250,246,238;
-        --scrim-rgb: 28,37,65;
-        --stamp-rgb: 228,87,46;
+        --stamp: #FF4D9D;
+        --gold: #FFC23E;
+        --sky: #4DD8FF;
+        --sage: #3ED598;
+        /* Tintes: bordes blancos translúcidos sobre el cristal */
+        --line-rgb: 255,255,255;
+        --inverse-rgb: 255,255,255;
+        --scrim-rgb: 6,8,20;
+        --stamp-rgb: 255,77,157;
         /* Campos / chips */
-        --field-bg: #FFFFFF;
-        --field-text: #1C2541;
+        --field-bg: rgba(255,255,255,0.07);
+        --field-text: #F4F6FF;
         --font-display: 'Space Grotesk', sans-serif;
         --font-body: 'Manrope', sans-serif;
       }
       * { box-sizing: border-box; }
       html, body { background: var(--ink); }
 
+      /* Fondo líquido: malla de gradientes suaves y animados */
+      .liquid-bg {
+        background-color: var(--ink);
+        background-image:
+          radial-gradient(at 18% 16%, rgba(96,92,255,0.5) 0%, transparent 52%),
+          radial-gradient(at 84% 20%, rgba(255,61,168,0.32) 0%, transparent 55%),
+          radial-gradient(at 66% 84%, rgba(42,199,255,0.36) 0%, transparent 55%),
+          radial-gradient(at 12% 78%, rgba(255,180,60,0.2) 0%, transparent 48%);
+        background-size: 220% 220%;
+        animation: liquid-mesh 26s ease-in-out infinite alternate;
+      }
+      @keyframes liquid-mesh {
+        0%   { background-position: 0% 0%; }
+        100% { background-position: 100% 100%; }
+      }
+
+      /* Blobs decorativos que flotan detrás del cristal */
+      .liquid-blob {
+        position: absolute;
+        border-radius: 9999px;
+        filter: blur(80px);
+        opacity: 0.55;
+        pointer-events: none;
+        animation: liquid-float 18s ease-in-out infinite alternate;
+        will-change: transform;
+      }
+      @keyframes liquid-float {
+        0%   { transform: translateY(0) scale(1); }
+        100% { transform: translateY(-34px) scale(1.08); }
+      }
+
       .font-display { font-family: var(--font-display); }
       .font-mono { font-family: 'IBM Plex Mono', monospace; }
       .font-body, body { font-family: 'Manrope', sans-serif; }
 
-      .bg-paper { background-color: var(--paper); }
-      .bg-paper-dim { background-color: var(--paper-dim); }
-      .bg-ink { background-color: var(--ink); }
+      /* Superficies de cristal: translúcidas con difuminado del fondo */
+      .bg-paper {
+        background-color: var(--paper);
+        background-image: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 40%);
+        -webkit-backdrop-filter: blur(22px) saturate(160%);
+        backdrop-filter: blur(22px) saturate(160%);
+      }
+      .bg-paper-dim {
+        background-color: var(--paper-dim);
+        -webkit-backdrop-filter: blur(22px) saturate(160%);
+        backdrop-filter: blur(22px) saturate(160%);
+      }
+      .bg-ink {
+        background-color: var(--ink);
+        -webkit-backdrop-filter: blur(28px) saturate(150%);
+        backdrop-filter: blur(28px) saturate(150%);
+      }
       .bg-stamp { background-color: var(--stamp); }
       .bg-gold { background-color: var(--gold); }
       .bg-sky { background-color: var(--sky); }
@@ -78,21 +123,25 @@ function GlobalStyle() {
       .text-ink { color: var(--text); }
       .text-stamp { color: var(--stamp); }
 
+      /* Campos de cristal */
       .field-input, .field-select, .field-textarea {
         width: 100%;
-        border-radius: 0.85rem;
+        border-radius: 1rem;
         padding: 0.65rem 0.9rem;
         font-size: 0.875rem;
         color: var(--field-text);
         background: var(--field-bg);
-        border: 1.5px solid rgba(var(--line-rgb),0.14);
+        -webkit-backdrop-filter: blur(14px) saturate(150%);
+        backdrop-filter: blur(14px) saturate(150%);
+        border: 1.5px solid rgba(var(--line-rgb),0.18);
         outline: none;
         font-family: var(--font-body);
-        transition: border-color .15s, box-shadow .15s;
+        transition: border-color .15s, box-shadow .15s, background-color .15s;
       }
       .field-input:focus, .field-select:focus, .field-textarea:focus {
         border-color: var(--stamp);
-        box-shadow: 0 0 0 3px rgba(var(--stamp-rgb),0.12);
+        box-shadow: 0 0 0 3px rgba(var(--stamp-rgb),0.18);
+        background: rgba(255,255,255,0.1);
       }
       .field-textarea { min-height: 4.5rem; resize: vertical; }
       input[type="date"], input[type="time"] { font-family: 'IBM Plex Mono', monospace; }
@@ -103,13 +152,25 @@ function GlobalStyle() {
         font-weight: 600;
         padding: 0.4rem 0.8rem;
         border-radius: 999px;
-        border: 1.5px solid rgba(var(--line-rgb),0.14);
+        border: 1.5px solid rgba(var(--line-rgb),0.18);
         color: var(--field-text);
         white-space: nowrap;
         flex-shrink: 0;
         background: var(--field-bg);
+        -webkit-backdrop-filter: blur(14px) saturate(150%);
+        backdrop-filter: blur(14px) saturate(150%);
       }
-      .chip.active { background: var(--ink); border-color: var(--ink); color: var(--text-inverse); }
+      .chip.active {
+        background: linear-gradient(135deg, rgba(var(--stamp-rgb),0.95), rgba(var(--stamp-rgb),0.55));
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 8px 20px -6px rgba(var(--stamp-rgb),0.5);
+      }
+
+      /* Brillo de superficie para botones (gloss / reflexión) */
+      .btn-gloss {
+        background-image: linear-gradient(180deg, rgba(255,255,255,0.26), rgba(255,255,255,0) 46%);
+      }
 
       @keyframes sheetUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
       .animate-sheet-up { animation: sheetUp .2s ease-out; }
@@ -131,25 +192,27 @@ function GlobalStyle() {
 // una entrada más aquí, nada más.
 const THEMES = {
   default: {
-    label: 'Clásico',
-    ink: '#1C2541', paper: '#FAF6EE', paperDim: '#F1EAD9',
-    text: '#1C2541', textInverse: '#FAF6EE',
-    stamp: '#E4572E', gold: '#D9A441', sky: '#3B6EA5', sage: '#3E7C59',
-    lineRgb: '28,37,65', inverseRgb: '250,246,238', scrimRgb: '28,37,65', stampRgb: '228,87,46',
-    fieldBg: '#FFFFFF', fieldText: '#1C2541',
+    // "Liquid Glass": base azul-violeta profunda, superficies de cristal
+    // translúcidas con blur, texto claro y un acento rosa neón estilo Y2K.
+    label: 'Liquid Glass',
+    ink: '#10142E', paper: 'rgba(255,255,255,0.08)', paperDim: 'rgba(255,255,255,0.13)',
+    text: '#F4F6FF', textInverse: '#FFFFFF',
+    stamp: '#FF4D9D', gold: '#FFC23E', sky: '#4DD8FF', sage: '#3ED598',
+    lineRgb: '255,255,255', inverseRgb: '255,255,255', scrimRgb: '6,8,20', stampRgb: '255,77,157',
+    fieldBg: 'rgba(255,255,255,0.07)', fieldText: '#F4F6FF',
     fontDisplay: "'Space Grotesk', sans-serif",
     fontBody: "'Manrope', sans-serif",
   },
   otaku: {
     label: 'Otaku mode',
-    // Tema oscuro estilo head-unit Y2K: base casi negra, texto claro suave y
-    // acentos neón (rosa/cian/oro/verde) reservados para indicadores e iconos,
-    // nunca como rellenos grandes. Evita #0000 y #fff puros para lectura nocturna.
-    ink: '#0E1020', paper: '#12141F', paperDim: '#1A1D33',
-    text: '#E9E4F5', textInverse: '#E9E4F5',
+    // Tema oscuro head-unit Y2K ahora también en cristal: base casi negra,
+    // superficies translúcidas, acentos neón (rosa/cian/oro/verde) reservados
+    // para indicadores e iconos. Evita #0000 y #fff puros para lectura nocturna.
+    ink: '#0E1020', paper: 'rgba(255,255,255,0.06)', paperDim: 'rgba(255,255,255,0.11)',
+    text: '#E9E4F5', textInverse: '#FFFFFF',
     stamp: '#FF3E9A', gold: '#FFC23E', sky: '#35C4F5', sage: '#3ED598',
-    lineRgb: '233,228,245', inverseRgb: '233,228,245', scrimRgb: '14,16,32', stampRgb: '255,62,154',
-    fieldBg: '#1A1D33', fieldText: '#E9E4F5',
+    lineRgb: '255,255,255', inverseRgb: '255,255,255', scrimRgb: '10,8,18', stampRgb: '255,62,154',
+    fieldBg: 'rgba(255,255,255,0.06)', fieldText: '#E9E4F5',
     fontDisplay: "'M PLUS Rounded 1c', sans-serif",
     fontBody: "'M PLUS Rounded 1c', sans-serif",
   },
@@ -633,7 +696,7 @@ function MapaView({ data, destinations, openEdit }) {
                 {p.kind === 'destino' && <MapPin size={13} style={{ color: 'var(--text-inverse)' }} />}
               </span>
               {p.kind === 'destino' && (
-                <span className="font-mono text-xs font-semibold text-ink mt-1 bg-paper px-1.5 py-0.5 rounded-full shadow-sm">{p.name}</span>
+                <span className="font-mono text-xs font-semibold text-ink mt-1 bg-ink px-1.5 py-0.5 rounded-full shadow-sm">{p.name}</span>
               )}
             </button>
           ))}
@@ -973,7 +1036,7 @@ export default function TripPlannerApp() {
 
   if (!data) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center" style={{ ...themeVars, backgroundColor: 'var(--ink)' }}>
+      <div className="liquid-bg min-h-screen w-full flex items-center justify-center" style={{ ...themeVars, backgroundColor: 'var(--ink)' }}>
         <GlobalStyle />
         <p className="font-mono text-sm" style={{ color: 'var(--text-inverse)', opacity: 0.7 }}>Cargando viaje…</p>
       </div>
@@ -1007,8 +1070,11 @@ export default function TripPlannerApp() {
   );
 
   return (
-    <div className="min-h-screen w-full flex justify-center sm:py-10 sm:px-4" style={{ ...themeVars, backgroundColor: 'var(--ink)' }}>
+    <div className="liquid-bg relative min-h-screen w-full flex justify-center overflow-hidden sm:px-4 sm:py-10" style={{ ...themeVars, backgroundColor: 'var(--ink)' }}>
       <GlobalStyle />
+      <div className="liquid-blob" style={{ width: 380, height: 380, top: '-10%', left: '-8%', background: 'radial-gradient(circle, rgba(96,92,255,0.9), transparent 70%)' }} />
+      <div className="liquid-blob" style={{ width: 440, height: 440, top: '38%', right: '-12%', background: 'radial-gradient(circle, rgba(255,61,168,0.75), transparent 70%)' }} />
+      <div className="liquid-blob" style={{ width: 320, height: 320, bottom: '-12%', left: '26%', background: 'radial-gradient(circle, rgba(42,199,255,0.7), transparent 70%)' }} />
       <ResponsiveAppShell tabs={activeTabs} tab={tab} setTab={setTab} theme={theme} setTheme={setTheme} isOtaku={isOtaku} onNotesTap={handleNotesHeaderClick}>
         {activeView}
       </ResponsiveAppShell>
