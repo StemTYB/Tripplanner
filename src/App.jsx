@@ -26,7 +26,7 @@ import { DeleteButton } from './components/ui/DeleteButton';
 import { EmptyState } from './components/ui/EmptyState';
 import { ItemImage } from './components/ui/ItemImage';
 import { SectionHeader } from './components/ui/SectionHeader';
-import { colorVar, PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES } from './domain/tripConfig';
+import { colorVar, PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES, EXPERIENCE_CATEGORIES } from './domain/tripConfig';
 
 /* ============================================================
    ESTILOS GLOBALES (fuentes, colores, clases utilitarias)
@@ -909,14 +909,20 @@ function NotasView({ data, openAdd, openEdit, onDelete, onHeaderClick }) {
   );
 }
 
-function ExperienceRow({ x, onEdit, onDelete }) {
+function ExperienceRow({ x, onEdit, onToggle, onDelete }) {
+  const cat = EXPERIENCE_CATEGORIES[x.category] || EXPERIENCE_CATEGORIES.otro;
   return (
-    <div className="rounded-2xl bg-paper border overflow-hidden" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
+    <div className="rounded-2xl bg-paper border overflow-hidden" style={{ borderColor: 'rgba(var(--line-rgb),0.1)', opacity: x.visited ? 0.72 : 1 }}>
       {x.imageUrl && <ItemImage src={x.imageUrl} alt={x.name} aspect="aspect-video" />}
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
-          <button onClick={onEdit} className="text-left">
-            <h3 className="font-display font-semibold text-ink text-sm">{x.name}</h3>
+          <button onClick={onEdit} className="text-left min-w-0">
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-display font-semibold text-ink text-sm" style={{ textDecoration: x.visited ? 'line-through' : 'none' }}>{x.name}</h3>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full font-mono text-[10px] font-semibold shrink-0" style={{ color: 'var(--text-inverse)', backgroundColor: colorVar(cat.color) }}>
+                {cat.label}
+              </span>
+            </div>
             {(x.location || x.price) && (
               <p className="font-mono text-xs text-ink truncate mt-0.5" style={{ opacity: 0.55 }}>
                 {[x.location, x.price].filter(Boolean).join(' · ')}
@@ -924,6 +930,13 @@ function ExperienceRow({ x, onEdit, onDelete }) {
             )}
           </button>
           <div className="flex items-center gap-1 shrink-0">
+            <button onClick={onToggle} className="w-8 h-8 rounded-full flex items-center justify-center" aria-label="Marcar como visitada"
+              style={x.visited
+                /* El sage (#3ED598) es igual en ambos temas, así que el rgba va fijo. */
+                ? { color: 'var(--sage)', backgroundColor: 'rgba(62,213,152,0.12)', boxShadow: '0 0 14px rgba(62,213,152,0.45)' }
+                : { color: 'var(--text)', opacity: 0.35 }}>
+              {x.visited ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+            </button>
             <button onClick={onEdit} className="p-1 rounded text-ink" style={{ opacity: 0.5 }}><Pencil size={13} /></button>
             <DeleteButton onDelete={onDelete} />
           </div>
@@ -937,17 +950,28 @@ function ExperienceRow({ x, onEdit, onDelete }) {
 // Easter Egg: pestaña oculta, se desbloquea con 3 toques rápidos en Notas
 // estando en Otaku Mode. CRUD idéntico al resto de entidades (experiences),
 // aislado por completo de la lógica de Notas.
-function EasterEggView({ data, openAdd, openEdit, onDelete }) {
+function EasterEggView({ data, openAdd, openEdit, onDelete, onToggleVisited }) {
+  const [catFilter, setCatFilter] = useState('todas');
+  const experiences = data.experiences || [];
+  const filtered = experiences.filter((x) => {
+    const cat = x.category || 'otro';
+    return catFilter === 'todas' || cat === catFilter;
+  });
   return (
     <div className="px-4 pt-4 pb-6 space-y-3">
       <div className="flex items-center gap-2 mb-1">
         <Sparkles size={18} className="text-stamp" />
         <span className="font-display text-lg font-bold text-ink">Experiencias secretas</span>
       </div>
-      <SectionHeader title="Easter Egg" onAdd={() => openAdd('experience', { name: '', location: '', price: '', description: '', imageUrl: '' })} addLabel="Añadir experiencia" />
-      {data.experiences.length === 0 && <EmptyState icon={Sparkles} title="Sin experiencias todavía" subtitle="Guarda aquí esos momentos únicos del viaje" />}
-      {data.experiences.map((x) => (
-        <ExperienceRow key={x.id} x={x} onEdit={() => openEdit('experience', x)} onDelete={() => onDelete('experiences', x.id)} />
+      <SectionHeader title="Easter Egg" onAdd={() => openAdd('experience', { name: '', location: '', price: '', description: '', imageUrl: '', category: 'otro', visited: false })} addLabel="Añadir experiencia" />
+      <div className="flex gap-2 overflow-x-auto scrollbar-none">
+        {[['todas', 'Todas'], ...Object.entries(EXPERIENCE_CATEGORIES).map(([k, c]) => [k, c.label])].map(([k, label]) => (
+          <button key={k} onClick={() => setCatFilter(k)} className={`chip ${catFilter === k ? 'active' : ''}`}>{label}</button>
+        ))}
+      </div>
+      {filtered.length === 0 && <EmptyState icon={Sparkles} title="Sin experiencias todavía" subtitle="Guarda aquí esos momentos únicos del viaje" />}
+      {filtered.map((x) => (
+        <ExperienceRow key={x.id} x={x} onEdit={() => openEdit('experience', x)} onDelete={() => onDelete('experiences', x.id)} onToggle={() => onToggleVisited(x.id)} />
       ))}
     </div>
   );
@@ -1073,6 +1097,13 @@ export default function TripPlannerApp() {
     setData((d) => ({ ...d, museums: d.museums.map((m) => (m.id === id ? { ...m, visited } : m)) }));
     api.update('museums', id, { visited }).catch((e) => console.error(e));
   };
+  const toggleExperienceVisited = (id) => {
+    const current = (data.experiences || []).find((x) => x.id === id);
+    if (!current) return;
+    const visited = !current.visited;
+    setData((d) => ({ ...d, experiences: d.experiences.map((x) => (x.id === id ? { ...x, visited } : x)) }));
+    api.update('experiences', id, { visited }).catch((e) => console.error(e));
+  };
   const toggleAcquired = (id) => {
     const current = data.shopping.find((i) => i.id === id);
     if (!current) return;
@@ -1142,7 +1173,7 @@ export default function TripPlannerApp() {
         <NotasView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onHeaderClick={handleNotesHeaderClick} />
       )}
       {tab === 'easteregg' && (
-        <EasterEggView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} />
+        <EasterEggView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onToggleVisited={toggleExperienceVisited} />
       )}
     </>
   );

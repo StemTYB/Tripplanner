@@ -4,7 +4,7 @@ import { Field } from '../ui/Field';
 import { FormActions } from '../ui/FormActions';
 import { ItemImage } from '../ui/ItemImage';
 import { Sheet } from '../ui/Sheet';
-import { colorVar, PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES } from '../../domain/tripConfig';
+import { colorVar, PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES, EXPERIENCE_CATEGORIES } from '../../domain/tripConfig';
 
 function TripForm({ initial, onSubmit }) {
   const [v, setV] = useState(initial);
@@ -204,11 +204,20 @@ function ExperienceForm({ initial, mode, onSubmit, onDelete }) {
   return (
     <div>
       <Field label="Nombre de la experiencia"><input className="field-input" value={v.name} onChange={set('name')} placeholder="Ej. Torneo arcade en Akihabara" /></Field>
-      <Field label="Lugar"><input className="field-input" value={v.location} onChange={set('location')} placeholder="Ej. Hi-tech Land, Taito Station" /></Field>
+      <Field label="Categoría">
+        <select className="field-select" value={v.category || 'otro'} onChange={set('category')}>
+          {Object.entries(EXPERIENCE_CATEGORIES).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}
+        </select>
+      </Field>
+      <Field label="Lugar / zona"><input className="field-input" value={v.location || ''} onChange={set('location')} placeholder="Ej. Yoshiwara, Susukino, Ogoto" /></Field>
       <Field label="URL de imagen"><input className="field-input" value={v.imageUrl || ''} onChange={set('imageUrl')} placeholder="https://..." /></Field>
       {v.imageUrl && <ItemImage src={v.imageUrl} alt={v.name} aspect="aspect-video" className="mb-4" />}
-      <Field label="Precio aprox. o real"><input className="field-input" value={v.price} onChange={set('price')} placeholder="Ej. ¥800 · gratis" /></Field>
-      <Field label="Descripción"><textarea className="field-textarea" value={v.description} onChange={set('description')} style={{ minHeight: '8rem' }} /></Field>
+      <Field label="Coste estimado (¥)"><input className="field-input" value={v.price || ''} onChange={set('price')} placeholder="Ej. ¥800 · gratis" /></Field>
+      <Field label="Notas / normas de entrada"><textarea className="field-textarea" value={v.description || ''} onChange={set('description')} style={{ minHeight: '8rem' }} /></Field>
+      <label className="flex items-center gap-2 mb-4">
+        <input type="checkbox" checked={Boolean(v.visited)} onChange={(e) => setV((s) => ({ ...s, visited: e.target.checked }))} />
+        <span className="text-sm text-ink">Ya lo visité</span>
+      </label>
       <FormActions mode={mode} onSave={() => onSubmit(v)} onDelete={onDelete} disabled={!v.name} />
     </div>
   );
