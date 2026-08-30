@@ -214,6 +214,29 @@ function ExperienceForm({ initial, mode, onSubmit, onDelete }) {
   );
 }
 
+function MuseumForm({ initial, mode, onSubmit, onDelete }) {
+  const [v, setV] = useState(initial);
+  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
+  return (
+    <div>
+      <Field label="Nombre del museo"><input className="field-input" value={v.name} onChange={set('name')} placeholder="Ej. Museo Nacional de Tokio" /></Field>
+      <Field label="Ciudad / zona"><input className="field-input" value={v.city || ''} onChange={set('city')} placeholder="Ej. Ueno, Tokio" /></Field>
+      <Field label="URL de imagen"><input className="field-input" value={v.imageUrl || ''} onChange={set('imageUrl')} placeholder="https://..." /></Field>
+      {v.imageUrl && <ItemImage src={v.imageUrl} alt={v.name} aspect="aspect-video" className="mb-4" />}
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Precio de entrada"><input className="field-input" value={v.admissionPrice || ''} onChange={set('admissionPrice')} placeholder="Ej. ¥1000 · gratis" /></Field>
+        <Field label="Horario"><input className="field-input" value={v.hours || ''} onChange={set('hours')} placeholder="Ej. 09:00 - 17:00" /></Field>
+      </div>
+      <Field label="Notas / exposiciones"><textarea className="field-textarea" value={v.notes || ''} onChange={set('notes')} placeholder="Qué ver, días de cierre, audioguías..." /></Field>
+      <label className="flex items-center gap-2 mb-4">
+        <input type="checkbox" checked={v.visited} onChange={(e) => setV((s) => ({ ...s, visited: e.target.checked }))} />
+        <span className="text-sm text-ink">Ya lo visité</span>
+      </label>
+      <FormActions mode={mode} onSave={() => onSubmit(v)} onDelete={onDelete} disabled={!v.name} />
+    </div>
+  );
+}
+
 const SHEET_TITLES = {
   trip: () => 'Editar viaje',
   destination: (m) => (m === 'add' ? 'Nuevo destino' : 'Editar destino'),
@@ -224,6 +247,7 @@ const SHEET_TITLES = {
   note: (m) => (m === 'add' ? 'Nueva nota' : 'Editar nota'),
   shopping: (m) => (m === 'add' ? 'Nuevo artículo' : 'Editar artículo'),
   experience: (m) => (m === 'add' ? 'Nueva experiencia' : 'Editar experiencia'),
+  museum: (m) => (m === 'add' ? 'Nuevo museo' : 'Editar museo'),
 };
 
 function SheetRouter({ sheet, onClose, onSave, onDeleteEntity, destinations, places }) {
@@ -246,6 +270,7 @@ function SheetRouter({ sheet, onClose, onSave, onDeleteEntity, destinations, pla
       {sheet.type === 'note' && <NoteForm {...common} />}
       {sheet.type === 'shopping' && <ShoppingForm {...common} />}
       {sheet.type === 'experience' && <ExperienceForm {...common} />}
+      {sheet.type === 'museum' && <MuseumForm {...common} />}
     </Sheet>
   );
 }

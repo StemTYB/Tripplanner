@@ -17,6 +17,7 @@ import {
   MapPin, Route, BedDouble,
   ShoppingBag, Sparkles,
   CheckCircle2, ArrowRight,
+  Clock, Ticket, Circle, Landmark,
 } from 'lucide-react';
 import { api } from './api';
 import { SheetRouter } from './components/forms/SheetRouter';
@@ -40,7 +41,7 @@ function GlobalStyle() {
         /* Superficies (translúcidas = cristal sobre el fondo líquido) */
         --paper: rgba(255,255,255,0.08);
         --paper-dim: rgba(255,255,255,0.13);
-        --ink: #10142E;
+        --ink: #0A0C1A;
         /* Texto */
         --text: #F4F6FF;
         --text-inverse: #FFFFFF;
@@ -63,14 +64,16 @@ function GlobalStyle() {
       * { box-sizing: border-box; }
       html, body { background: var(--ink); }
 
-      /* Fondo líquido: malla de gradientes suaves y animados */
+      /* Fondo líquido: malla de gradientes suaves y animados, en tonos
+         profundos (violeta oscuro / índigo / azul noche) para que el cristal
+         claro y el texto blanco resalten sin forzar la vista. */
       .liquid-bg {
         background-color: var(--ink);
         background-image:
-          radial-gradient(at 18% 16%, rgba(96,92,255,0.5) 0%, transparent 52%),
-          radial-gradient(at 84% 20%, rgba(255,61,168,0.32) 0%, transparent 55%),
-          radial-gradient(at 66% 84%, rgba(42,199,255,0.36) 0%, transparent 55%),
-          radial-gradient(at 12% 78%, rgba(255,180,60,0.2) 0%, transparent 48%);
+          radial-gradient(at 18% 16%, rgba(76,72,220,0.36) 0%, transparent 52%),
+          radial-gradient(at 84% 20%, rgba(160,40,150,0.24) 0%, transparent 55%),
+          radial-gradient(at 66% 84%, rgba(26,86,150,0.3) 0%, transparent 55%),
+          radial-gradient(at 12% 78%, rgba(110,70,160,0.2) 0%, transparent 48%);
         background-size: 220% 220%;
         animation: liquid-mesh 26s ease-in-out infinite alternate;
       }
@@ -84,7 +87,7 @@ function GlobalStyle() {
         position: absolute;
         border-radius: 9999px;
         filter: blur(80px);
-        opacity: 0.55;
+        opacity: 0.42;
         pointer-events: none;
         animation: liquid-float 18s ease-in-out infinite alternate;
         will-change: transform;
@@ -195,7 +198,7 @@ const THEMES = {
     // "Liquid Glass": base azul-violeta profunda, superficies de cristal
     // translúcidas con blur, texto claro y un acento rosa neón estilo Y2K.
     label: 'Liquid Glass',
-    ink: '#10142E', paper: 'rgba(255,255,255,0.08)', paperDim: 'rgba(255,255,255,0.13)',
+    ink: '#0A0C1A', paper: 'rgba(255,255,255,0.08)', paperDim: 'rgba(255,255,255,0.13)',
     text: '#F4F6FF', textInverse: '#FFFFFF',
     stamp: '#FF4D9D', gold: '#FFC23E', sky: '#4DD8FF', sage: '#3ED598',
     lineRgb: '255,255,255', inverseRgb: '255,255,255', scrimRgb: '6,8,20', stampRgb: '255,77,157',
@@ -208,7 +211,7 @@ const THEMES = {
     // Tema oscuro head-unit Y2K ahora también en cristal: base casi negra,
     // superficies translúcidas, acentos neón (rosa/cian/oro/verde) reservados
     // para indicadores e iconos. Evita #0000 y #fff puros para lectura nocturna.
-    ink: '#0E1020', paper: 'rgba(255,255,255,0.06)', paperDim: 'rgba(255,255,255,0.11)',
+    ink: '#070910', paper: 'rgba(255,255,255,0.06)', paperDim: 'rgba(255,255,255,0.11)',
     text: '#E9E4F5', textInverse: '#FFFFFF',
     stamp: '#FF3E9A', gold: '#FFC23E', sky: '#35C4F5', sage: '#3ED598',
     lineRgb: '255,255,255', inverseRgb: '255,255,255', scrimRgb: '10,8,18', stampRgb: '255,62,154',
@@ -230,7 +233,7 @@ const TABS = [
 const ENTITY_KEY = {
   destination: 'destinations', stay: 'stays', transport: 'transports',
   place: 'places', activity: 'activities', note: 'notes', shopping: 'shopping',
-  experience: 'experiences',
+  experience: 'experiences', museum: 'museums',
 };
 
 /* ============================================================
@@ -732,43 +735,111 @@ function MapaView({ data, destinations, openEdit }) {
   );
 }
 
-function LugaresView({ data, destinations, openAdd, openEdit, onDelete, onToggleVisited }) {
+function MuseumCard({ m, onEdit, onToggle, onDelete }) {
+  return (
+    <div className="rounded-2xl bg-paper border overflow-hidden" style={{ borderColor: 'rgba(var(--line-rgb),0.1)', opacity: m.visited ? 0.72 : 1 }}>
+      {m.imageUrl && <ItemImage src={m.imageUrl} alt={m.name} aspect="aspect-[4/3]" />}
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="font-display font-semibold text-ink text-sm truncate" style={{ textDecoration: m.visited ? 'line-through' : 'none' }}>{m.name}</p>
+            {m.city && (
+              <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-paper-dim text-ink font-mono text-[11px] font-semibold">
+                <MapPin size={10} /> {m.city}
+              </span>
+            )}
+          </div>
+          <button onClick={onToggle} className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" aria-label="Marcar como visitado"
+            style={m.visited
+              /* El sage (#3ED598) es igual en ambos temas, así que el rgba va fijo. */
+              ? { color: 'var(--sage)', backgroundColor: 'rgba(62,213,152,0.12)', boxShadow: '0 0 14px rgba(62,213,152,0.45)' }
+              : { color: 'var(--text)', opacity: 0.35 }}>
+            {m.visited ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+          </button>
+        </div>
+        <div className="mt-2.5 space-y-1">
+          {m.hours && <p className="text-xs text-ink flex items-center gap-1.5" style={{ opacity: 0.6 }}><Clock size={11} /> {m.hours}</p>}
+          {m.admissionPrice && <p className="text-xs text-ink flex items-center gap-1.5" style={{ opacity: 0.6 }}><Ticket size={11} /> {m.admissionPrice}</p>}
+        </div>
+        {m.notes && <p className="text-xs text-ink mt-2 leading-relaxed" style={{ opacity: 0.7 }}>{m.notes}</p>}
+        <div className="flex items-center justify-end mt-3 pt-2.5 border-t" style={{ borderColor: 'rgba(var(--line-rgb),0.08)' }}>
+          <button onClick={onEdit} className="p-1.5 rounded-lg text-ink" style={{ opacity: 0.5 }}><Pencil size={14} /></button>
+          <DeleteButton onDelete={onDelete} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LugaresView({ data, destinations, openAdd, openEdit, onDelete, onToggleVisited, onToggleMuseumVisited }) {
+  const [section, setSection] = useState('lugares');
   const [filter, setFilter] = useState('todos');
+  const [museumFilter, setMuseumFilter] = useState('todos');
   const filtered = data.places.filter((p) => (filter === 'todos' ? true : filter === 'visitados' ? p.visited : !p.visited));
+  const museums = data.museums || [];
+  const filteredMuseums = museums.filter((m) => (museumFilter === 'todos' ? true : museumFilter === 'visitados' ? m.visited : !m.visited));
 
   return (
     <div className="pb-6">
       <div className="flex gap-2 px-4 pt-4 pb-1 overflow-x-auto scrollbar-none">
-        {[['todos', 'Todos'], ['pendientes', 'Por visitar'], ['visitados', 'Visitados']].map(([k, label]) => (
-          <button key={k} onClick={() => setFilter(k)} className={`chip ${filter === k ? 'active' : ''}`}>{label}</button>
+        {[['lugares', 'Lugares'], ['museos', 'Museos']].map(([k, label]) => (
+          <button key={k} onClick={() => setSection(k)} className={`chip ${section === k ? 'active' : ''}`}>{label}</button>
         ))}
       </div>
-      <div className="px-4 pt-3 space-y-6">
-        {destinations.map((d) => {
-          const items = filtered.filter((p) => p.destId === d.id);
-          if (items.length === 0) return null;
-          return (
-            <div key={d.id}>
-              <div className="flex items-center justify-between mb-2.5">
-                <h3 className="font-display font-bold text-ink text-sm flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: colorVar(d.color) }} />{d.name}
-                </h3>
-                <button onClick={() => openAdd('place', { destId: d.id, name: '', category: 'otro', note: '', visited: false, mapPos: { ...d.mapPos } })} className="text-ink" style={{ opacity: 0.5 }}>
-                  <Plus size={16} />
-                </button>
-              </div>
-              <div className="space-y-2">
-                {items.map((p) => <PlaceRow key={p.id} p={p} onEdit={() => openEdit('place', p)} onDelete={() => onDelete('places', p.id)} onToggle={() => onToggleVisited(p.id)} />)}
-              </div>
-            </div>
-          );
-        })}
-        {filtered.length === 0 && <EmptyState icon={Compass} title="Nada por aquí" subtitle="Prueba otro filtro o añade un lugar nuevo" />}
-        <button onClick={() => openAdd('place', { destId: destinations[0]?.id || '', name: '', category: 'otro', note: '', visited: false, mapPos: { x: 50, y: 50 } })}
-          className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl border border-dashed text-sm font-semibold text-ink" style={{ borderColor: 'rgba(var(--line-rgb),0.2)', opacity: 0.7 }}>
-          <Plus size={15} /> Añadir lugar
-        </button>
-      </div>
+
+      {section === 'lugares' ? (
+        <>
+          <div className="flex gap-2 px-4 pt-1 pb-1 overflow-x-auto scrollbar-none">
+            {[['todos', 'Todos'], ['pendientes', 'Por visitar'], ['visitados', 'Visitados']].map(([k, label]) => (
+              <button key={k} onClick={() => setFilter(k)} className={`chip ${filter === k ? 'active' : ''}`}>{label}</button>
+            ))}
+          </div>
+          <div className="px-4 pt-3 space-y-6">
+            {destinations.map((d) => {
+              const items = filtered.filter((p) => p.destId === d.id);
+              if (items.length === 0) return null;
+              return (
+                <div key={d.id}>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <h3 className="font-display font-bold text-ink text-sm flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: colorVar(d.color) }} />{d.name}
+                    </h3>
+                    <button onClick={() => openAdd('place', { destId: d.id, name: '', category: 'otro', note: '', visited: false, mapPos: { ...d.mapPos } })} className="text-ink" style={{ opacity: 0.5 }}>
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {items.map((p) => <PlaceRow key={p.id} p={p} onEdit={() => openEdit('place', p)} onDelete={() => onDelete('places', p.id)} onToggle={() => onToggleVisited(p.id)} />)}
+                  </div>
+                </div>
+              );
+            })}
+            {filtered.length === 0 && <EmptyState icon={Compass} title="Nada por aquí" subtitle="Prueba otro filtro o añade un lugar nuevo" />}
+            <button onClick={() => openAdd('place', { destId: destinations[0]?.id || '', name: '', category: 'otro', note: '', visited: false, mapPos: { x: 50, y: 50 } })}
+              className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl border border-dashed text-sm font-semibold text-ink" style={{ borderColor: 'rgba(var(--line-rgb),0.2)', opacity: 0.7 }}>
+              <Plus size={15} /> Añadir lugar
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex gap-2 px-4 pt-1 pb-1 overflow-x-auto scrollbar-none">
+            {[['todos', 'Todos'], ['pendientes', 'Por visitar'], ['visitados', 'Visitados']].map(([k, label]) => (
+              <button key={k} onClick={() => setMuseumFilter(k)} className={`chip ${museumFilter === k ? 'active' : ''}`}>{label}</button>
+            ))}
+          </div>
+          <div className="px-4 pt-3 space-y-3">
+            {filteredMuseums.map((m) => (
+              <MuseumCard key={m.id} m={m} onEdit={() => openEdit('museum', m)} onDelete={() => onDelete('museums', m.id)} onToggle={() => onToggleMuseumVisited(m.id)} />
+            ))}
+            {filteredMuseums.length === 0 && <EmptyState icon={Landmark} title="Sin museos todavía" subtitle="Añade el primero y planifica la visita" />}
+            <button onClick={() => openAdd('museum', { name: '', city: '', imageUrl: '', admissionPrice: '', hours: '', notes: '', visited: false })}
+              className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl border border-dashed text-sm font-semibold text-ink" style={{ borderColor: 'rgba(var(--line-rgb),0.2)', opacity: 0.7 }}>
+              <Plus size={15} /> Añadir museo
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -995,6 +1066,13 @@ export default function TripPlannerApp() {
     setData((d) => ({ ...d, places: d.places.map((p) => (p.id === id ? { ...p, visited } : p)) }));
     api.update('places', id, { visited }).catch((e) => console.error(e));
   };
+  const toggleMuseumVisited = (id) => {
+    const current = (data.museums || []).find((m) => m.id === id);
+    if (!current) return;
+    const visited = !current.visited;
+    setData((d) => ({ ...d, museums: d.museums.map((m) => (m.id === id ? { ...m, visited } : m)) }));
+    api.update('museums', id, { visited }).catch((e) => console.error(e));
+  };
   const toggleAcquired = (id) => {
     const current = data.shopping.find((i) => i.id === id);
     if (!current) return;
@@ -1055,7 +1133,7 @@ export default function TripPlannerApp() {
         <MapaView data={data} destinations={destinationsSorted} openEdit={openEdit} />
       )}
       {tab === 'lugares' && (
-        <LugaresView data={data} destinations={destinationsSorted} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onToggleVisited={toggleVisited} />
+        <LugaresView data={data} destinations={destinationsSorted} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onToggleVisited={toggleVisited} onToggleMuseumVisited={toggleMuseumVisited} />
       )}
       {tab === 'compras' && (
         <ComprasView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onToggleAcquired={toggleAcquired} />
@@ -1072,9 +1150,9 @@ export default function TripPlannerApp() {
   return (
     <div className="liquid-bg relative min-h-screen w-full flex justify-center overflow-hidden sm:px-4 sm:py-10" style={{ ...themeVars, backgroundColor: 'var(--ink)' }}>
       <GlobalStyle />
-      <div className="liquid-blob" style={{ width: 380, height: 380, top: '-10%', left: '-8%', background: 'radial-gradient(circle, rgba(96,92,255,0.9), transparent 70%)' }} />
-      <div className="liquid-blob" style={{ width: 440, height: 440, top: '38%', right: '-12%', background: 'radial-gradient(circle, rgba(255,61,168,0.75), transparent 70%)' }} />
-      <div className="liquid-blob" style={{ width: 320, height: 320, bottom: '-12%', left: '26%', background: 'radial-gradient(circle, rgba(42,199,255,0.7), transparent 70%)' }} />
+      <div className="liquid-blob" style={{ width: 380, height: 380, top: '-10%', left: '-8%', background: 'radial-gradient(circle, rgba(70,64,190,0.8), transparent 70%)' }} />
+      <div className="liquid-blob" style={{ width: 440, height: 440, top: '38%', right: '-12%', background: 'radial-gradient(circle, rgba(150,36,140,0.6), transparent 70%)' }} />
+      <div className="liquid-blob" style={{ width: 320, height: 320, bottom: '-12%', left: '26%', background: 'radial-gradient(circle, rgba(24,96,170,0.6), transparent 70%)' }} />
       <ResponsiveAppShell tabs={activeTabs} tab={tab} setTab={setTab} theme={theme} setTheme={setTheme} isOtaku={isOtaku} onNotesTap={handleNotesHeaderClick}>
         {activeView}
       </ResponsiveAppShell>

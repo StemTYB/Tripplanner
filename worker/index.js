@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 
-const ENTITY_TABLES = ['destinations', 'stays', 'transports', 'places', 'activities', 'shopping', 'notes', 'experiences'];
+const ENTITY_TABLES = ['destinations', 'stays', 'transports', 'places', 'activities', 'shopping', 'notes', 'experiences', 'museums'];
 const isKnownEntity = (t) => ENTITY_TABLES.includes(t);
 
 const app = new Hono();
