@@ -1,10 +1,61 @@
 import { useState } from 'react';
+import { X } from 'lucide-react';
 
-import { Field } from '../ui/Field';
-import { FormActions } from '../ui/FormActions';
 import { ItemImage } from '../ui/ItemImage';
-import { Sheet } from '../ui/Sheet';
-import { colorVar, PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES, EXPERIENCE_CATEGORIES } from '../../domain/tripConfig';
+import {
+  colorVar, PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES, EXPERIENCE_CATEGORIES,
+  EXPENSE_CATEGORIES, CURRENCIES, DEFAULT_CURRENCY,
+} from '../../domain/tripConfig';
+import { currenciesUsed, readBudget } from '../../domain/budget';
+
+// --- bloques de UI propios de los formularios ------------------------------
+// Antes vivían en src/components/ui/ con este archivo como único consumidor;
+// se quedan aquí para no mantener tres módulos de una sola función.
+
+function Field({ label, children }) {
+  return (
+    <div className="mb-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink mb-1.5" style={{ opacity: 0.5 }}>{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function FormActions({ mode, onSave, onDelete, disabled }) {
+  return (
+    <div className="pt-2">
+      <button onClick={onSave} disabled={disabled}
+        className="btn-gloss w-full py-3 rounded-2xl font-display font-semibold bg-stamp text-paper border border-white/20"
+        style={{ opacity: disabled ? 0.5 : 1, boxShadow: '0 14px 30px -12px rgba(var(--stamp-rgb),0.55)' }}>
+        {mode === 'add' ? 'Añadir' : 'Guardar cambios'}
+      </button>
+      {mode === 'edit' && onDelete && (
+        <button onClick={onDelete} className="w-full py-2.5 mt-2 rounded-xl font-semibold text-stamp text-sm">
+          Eliminar
+        </button>
+      )}
+    </div>
+  );
+}
+
+// El Sheet solo se monta cuando SheetRouter tiene un `sheet` activo, así que
+// no necesita prop `open`: existir = estar abierto.
+function Sheet({ title, onClose, children }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0" style={{ backgroundColor: 'rgba(var(--scrim-rgb),0.55)' }} onClick={onClose} />
+      <div className="relative w-full sm:max-w-md bg-paper rounded-t-[2rem] sm:rounded-[2.5rem] overflow-y-auto animate-sheet-up sm:border sm:border-white/15" style={{ maxHeight: '88vh' }}>
+        <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-paper" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
+          <h3 className="font-display text-lg font-bold text-ink">{title}</h3>
+          <button onClick={onClose} className="p-2 rounded-full" style={{ backgroundColor: 'rgba(var(--line-rgb),0.06)' }}>
+            <X size={17} className="text-ink" />
+          </button>
+        </div>
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
 
 function TripForm({ initial, onSubmit }) {
   const [v, setV] = useState(initial);
@@ -246,6 +297,115 @@ function MuseumForm({ initial, mode, onSubmit, onDelete }) {
   );
 }
 
+function ExpenseForm({ initial, mode, destinations, onSubmit, onDelete }) {
+  const [v, setV] = useState(initial);
+  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
+  // Si un gasto antiguo trae una moneda fuera de la lista, se añade al vuelo
+  // para que el <select> no muestre un valor vacío.
+  const currencyOptions = CURRENCIES.includes(v.currency) ? CURRENCIES : [...CURRENCIES, v.currency].filter(Boolean);
+  return (
+    <div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Importe">
+          <input type="number" inputMode="decimal" className="field-input" value={v.amount ?? ''} onChange={set('amount')} placeholder="0" />
+        </Field>
+        <Field label="Moneda">
+          <select className="field-select" value={v.currency || DEFAULT_CURRENCY} onChange={set('currency')}>
+            {currencyOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </Field>
+      </div>
+      <Field label="Categoría">
+        <select className="field-select" value={v.category || 'otro'} onChange={set('category')}>
+          {Object.entries(EXPENSE_CATEGORIES).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}
+        </select>
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Fecha"><input type="date" className="field-input" value={v.date || ''} onChange={set('date')} /></Field>
+        <Field label="Destino">
+          <select className="field-select" value={v.destId || ''} onChange={set('destId')}>
+            <option value="">Sin destino</option>
+            {destinations.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+        </Field>
+      </div>
+      <Field label="Nota"><input className="field-input" value={v.note || ''} onChange={set('note')} placeholder="Ej. Cena en izakaya" /></Field>
+      <FormActions mode={mode} onSave={() => onSubmit(v)} onDelete={onDelete} disabled={!(Number(v.amount) > 0) || !v.date} />
+    </div>
+  );
+}
+
+// Los campos de presupuesto viven dentro de trip.payload y se guardan con el
+// mismo endpoint que el resto del viaje (PUT /api/trip), que hace merge — así
+// que este formulario solo envía sus propias claves y nunca toca nombre ni
+// fechas del viaje.
+function BudgetForm({ initial, expenses, onSubmit }) {
+  const current = readBudget(initial);
+  const [v, setV] = useState({
+    budgetTotal: current.budgetTotal || '',
+    budgetDaily: current.budgetDaily || '',
+    baseCurrency: current.baseCurrency,
+    fxRates: current.fxRates,
+  });
+  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
+  const setRate = (code) => (e) => setV((s) => ({ ...s, fxRates: { ...s.fxRates, [code]: e.target.value } }));
+  // Cambiar la moneda base invalida los tipos de cambio guardados (estaban
+  // expresados en la base anterior), así que se vacían en vez de arrastrar
+  // números que ya no significan lo mismo.
+  const setBase = (e) => setV((s) => ({ ...s, baseCurrency: e.target.value, fxRates: {} }));
+
+  const foreign = currenciesUsed(expenses).filter((c) => c !== v.baseCurrency);
+
+  const submit = () => {
+    const rates = {};
+    for (const c of foreign) {
+      const r = Number(v.fxRates[c]);
+      if (Number.isFinite(r) && r > 0) rates[c] = r;
+    }
+    onSubmit({
+      budgetTotal: Number(v.budgetTotal) || 0,
+      budgetDaily: Number(v.budgetDaily) || 0,
+      baseCurrency: v.baseCurrency,
+      fxRates: rates,
+    });
+  };
+
+  return (
+    <div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Presupuesto total"><input type="number" inputMode="decimal" className="field-input" value={v.budgetTotal} onChange={set('budgetTotal')} placeholder="0" /></Field>
+        <Field label="Objetivo diario"><input type="number" inputMode="decimal" className="field-input" value={v.budgetDaily} onChange={set('budgetDaily')} placeholder="0" /></Field>
+      </div>
+      <Field label="Moneda base">
+        <select className="field-select" value={v.baseCurrency} onChange={setBase}>
+          {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </Field>
+      <Field label={`Tipos de cambio (1 unidad = ? ${v.baseCurrency})`}>
+        {foreign.length === 0 ? (
+          <p className="text-xs text-ink" style={{ opacity: 0.5 }}>
+            No hay gastos en otra moneda. Si registras alguno, aquí aparecerá su tipo de cambio respecto al {v.baseCurrency}.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {foreign.map((c) => (
+              <div key={c} className="flex items-center gap-2">
+                <span className="font-mono text-xs text-ink w-20 shrink-0" style={{ opacity: 0.6 }}>1 {c} =</span>
+                <input type="number" inputMode="decimal" className="field-input" value={v.fxRates[c] ?? ''} onChange={setRate(c)} placeholder="0" />
+                <span className="font-mono text-xs text-ink shrink-0" style={{ opacity: 0.6 }}>{v.baseCurrency}</span>
+              </div>
+            ))}
+            <p className="text-xs text-ink" style={{ opacity: 0.5 }}>
+              Sin tipo de cambio, esos gastos quedan fuera del total (se avisa en la pestaña Gastos).
+            </p>
+          </div>
+        )}
+      </Field>
+      <FormActions mode="edit" onSave={submit} />
+    </div>
+  );
+}
+
 const SHEET_TITLES = {
   trip: () => 'Editar viaje',
   destination: (m) => (m === 'add' ? 'Nuevo destino' : 'Editar destino'),
@@ -257,9 +417,11 @@ const SHEET_TITLES = {
   shopping: (m) => (m === 'add' ? 'Nuevo artículo' : 'Editar artículo'),
   experience: (m) => (m === 'add' ? 'Nueva experiencia' : 'Editar experiencia'),
   museum: (m) => (m === 'add' ? 'Nuevo museo' : 'Editar museo'),
+  expense: (m) => (m === 'add' ? 'Nuevo gasto' : 'Editar gasto'),
+  budget: () => 'Presupuesto',
 };
 
-function SheetRouter({ sheet, onClose, onSave, onDeleteEntity, destinations, places }) {
+function SheetRouter({ sheet, onClose, onSave, onDeleteEntity, destinations, places, expenses }) {
   if (!sheet) return null;
   const title = SHEET_TITLES[sheet.type](sheet.mode);
   const common = {
@@ -269,7 +431,7 @@ function SheetRouter({ sheet, onClose, onSave, onDeleteEntity, destinations, pla
     onDelete: sheet.mode === 'edit' ? () => onDeleteEntity(sheet.type, sheet.initial.id) : undefined,
   };
   return (
-    <Sheet open title={title} onClose={onClose}>
+    <Sheet title={title} onClose={onClose}>
       {sheet.type === 'trip' && <TripForm {...common} />}
       {sheet.type === 'destination' && <DestinationForm {...common} />}
       {sheet.type === 'stay' && <StayForm {...common} destinations={destinations} />}
@@ -280,6 +442,10 @@ function SheetRouter({ sheet, onClose, onSave, onDeleteEntity, destinations, pla
       {sheet.type === 'shopping' && <ShoppingForm {...common} />}
       {sheet.type === 'experience' && <ExperienceForm {...common} />}
       {sheet.type === 'museum' && <MuseumForm {...common} />}
+      {sheet.type === 'expense' && <ExpenseForm {...common} destinations={destinations} />}
+      {/* BudgetForm no recibe onDelete: el presupuesto son campos del viaje,
+          no una entidad borrable, y no debe mostrar el botón de eliminar. */}
+      {sheet.type === 'budget' && <BudgetForm initial={sheet.initial} expenses={expenses} onSubmit={onSave} />}
     </Sheet>
   );
 }

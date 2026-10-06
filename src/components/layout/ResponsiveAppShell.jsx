@@ -99,7 +99,7 @@ function BottomNav({ tabs, tab, setTab, onNotesTap }) {
   );
 }
 
-function ResponsiveAppShell({ tabs, tab, setTab, theme, setTheme, isOtaku, onNotesTap, children }) {
+function ResponsiveAppShell({ tabs, tab, setTab, theme, setTheme, onNotesTap, children }) {
   // BottomNav va FUERA de la cáscara: `.bg-paper` usa `backdrop-filter`, y un
   // `backdrop-filter` sobre un ancestro lo convierte en el containing block de
   // los `position: fixed`, anclando la barra al fondo del documento en vez del
@@ -110,7 +110,7 @@ function ResponsiveAppShell({ tabs, tab, setTab, theme, setTheme, isOtaku, onNot
         className="w-full sm:max-w-md lg:max-w-6xl bg-paper min-h-screen sm:rounded-[2.5rem_2rem_3rem_2.25rem] sm:border sm:border-white/15 sm:shadow-2xl overflow-hidden flex flex-col lg:grid lg:grid-cols-[17rem_minmax(0,1fr)]"
         style={{
           fontFamily: 'var(--font-body)',
-          backgroundImage: isOtaku ? 'radial-gradient(rgba(var(--line-rgb),0.07) 1px, transparent 1.6px)' : 'none',
+          backgroundImage: theme === 'otaku' ? 'radial-gradient(rgba(var(--line-rgb),0.07) 1px, transparent 1.6px)' : 'none',
           backgroundSize: '16px 16px',
         }}
       >

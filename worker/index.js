@@ -1,6 +1,9 @@
 import { Hono } from 'hono';
 
-const ENTITY_TABLES = ['destinations', 'stays', 'transports', 'places', 'activities', 'shopping', 'notes', 'experiences', 'museums'];
+// Lista blanca única de entidades: sirve tanto para el CRUD genérico
+// (isKnownEntity) como para el volcado de /api/state. Añadir una entidad
+// nueva = añadir su tabla aquí y su migración en migrations/.
+const ENTITY_TABLES = ['destinations', 'stays', 'transports', 'places', 'activities', 'shopping', 'notes', 'experiences', 'museums', 'expenses'];
 const isKnownEntity = (t) => ENTITY_TABLES.includes(t);
 
 const app = new Hono();
@@ -13,8 +16,18 @@ app.get('/api/state', async (c) => {
   const state = { trip: tripRow ? JSON.parse(tripRow.payload) : null };
 
   for (const table of ENTITY_TABLES) {
-    const { results } = await DB.prepare(`SELECT payload FROM ${table} ORDER BY sort_order ASC, id ASC`).all();
-    state[table] = results.map((r) => JSON.parse(r.payload));
+    try {
+      const { results } = await DB.prepare(`SELECT payload FROM ${table} ORDER BY sort_order ASC, id ASC`).all();
+      state[table] = results.map((r) => JSON.parse(r.payload));
+    } catch (err) {
+      // Una tabla que aún no existe (migración no aplicada todavía en este
+      // entorno) no debe tumbar el volcado completo: el frontend recibe una
+      // lista vacía para esa entidad y el resto del viaje sigue cargando.
+      // Queda registrado en los logs para no confundir "sin datos" con
+      // "migración sin aplicar".
+      console.error(`No se pudo leer la tabla "${table}"; se devuelve []`, err);
+      state[table] = [];
+    }
   }
   return c.json(state);
 });
@@ -37,8 +50,8 @@ app.post('/api/:entity', async (c) => {
   const item = await c.req.json();
   if (!item.id) return c.json({ error: 'falta id' }, 400);
 
-  await DB.prepare(`INSERT INTO ${entity} (id, dest_id, sort_order, payload) VALUES (?, ?, ?, ?)`)
-    .bind(item.id, item.destId || null, item.order ?? 0, JSON.stringify(item))
+  await DB.prepare(`INSERT INTO ${entity} (id, sort_order, payload) VALUES (?, ?, ?)`)
+    .bind(item.id, item.order ?? 0, JSON.stringify(item))
     .run();
   return c.json(item, 201);
 });
@@ -54,8 +67,8 @@ app.put('/api/:entity/:id', async (c) => {
 
   const values = await c.req.json();
   const next = { ...JSON.parse(row.payload), ...values };
-  await DB.prepare(`UPDATE ${entity} SET payload = ?, dest_id = ?, sort_order = ? WHERE id = ?`)
-    .bind(JSON.stringify(next), next.destId || null, next.order ?? 0, id)
+  await DB.prepare(`UPDATE ${entity} SET payload = ?, sort_order = ? WHERE id = ?`)
+    .bind(JSON.stringify(next), next.order ?? 0, id)
     .run();
   return c.json(next);
 });

@@ -3,12 +3,18 @@ import {
   MapPin,
   Utensils, ShoppingBag, Landmark, Music, Trees, Sparkles, Gauge,
   Flame, Gamepad2, Coffee,
+  BedDouble, Ticket, Wallet,
 } from 'lucide-react';
 
 // colorVar returns a CSS var() reference (not a literal hex) so every dynamic
 // color usage (destination badges, category icons, map pins) automatically
 // re-skins when the active theme changes the underlying custom property.
 const colorVar = (key) => `var(--${key})`;
+
+// Entrada de categoría dentro de un mapa (PLACE_CATEGORIES,
+// EXPERIENCE_CATEGORIES, EXPENSE_CATEGORIES) con 'otro' como fallback para
+// valores antiguos o desconocidos que lleguen en datos ya guardados.
+const catOf = (map, key) => map[key] || map.otro;
 
 const TRANSPORT_TYPES = {
   flight: { label: 'Vuelo', icon: Plane },
@@ -41,4 +47,27 @@ const EXPERIENCE_CATEGORIES = {
   otro: { label: 'Otro', icon: Sparkles, color: 'ink' },
 };
 
-export { colorVar, PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES, EXPERIENCE_CATEGORIES };
+// Categorías de la pestaña "Gastos". Deliberadamente separadas de
+// PLACE_CATEGORIES: esa lista alimenta los <select> de lugares y actividades,
+// así que añadir aquí categorías de gasto no debe tocar aquellos formularios.
+const EXPENSE_CATEGORIES = {
+  comida: { label: 'Comida', icon: Utensils, color: 'stamp' },
+  transporte: { label: 'Transporte', icon: TrainFront, color: 'sky' },
+  alojamiento: { label: 'Alojamiento', icon: BedDouble, color: 'gold' },
+  compras: { label: 'Compras', icon: ShoppingBag, color: 'gold' },
+  entradas: { label: 'Entradas', icon: Ticket, color: 'sky' },
+  ocio: { label: 'Ocio', icon: Music, color: 'stamp' },
+  otro: { label: 'Otro', icon: Wallet, color: 'sage' },
+};
+
+// Monedas ofrecidas al registrar un gasto. Cada gasto guarda su propio
+// importe + moneda; la conversión a la moneda base del viaje es un paso
+// aparte (ver src/domain/budget.js) y nunca se suma a ciegas.
+const CURRENCIES = ['JPY', 'MXN', 'USD', 'EUR'];
+const DEFAULT_CURRENCY = 'JPY';
+
+export {
+  colorVar, catOf,
+  PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES, EXPERIENCE_CATEGORIES,
+  EXPENSE_CATEGORIES, CURRENCIES, DEFAULT_CURRENCY,
+};

@@ -4,7 +4,6 @@
 
 CREATE TABLE IF NOT EXISTS museums (
   id TEXT PRIMARY KEY,
-  dest_id TEXT,
   sort_order INTEGER,
   payload TEXT NOT NULL
 );

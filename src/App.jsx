@@ -15,18 +15,20 @@ import {
   Home, Calendar, Map, Compass, StickyNote, Plus, Pencil,
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
   MapPin, Route, BedDouble,
-  ShoppingBag, Sparkles,
+  ShoppingBag, Sparkles, Wallet,
   CheckCircle2, ArrowRight,
   Clock, Ticket, Circle, Landmark,
 } from 'lucide-react';
 import { api } from './api';
 import { SheetRouter } from './components/forms/SheetRouter';
+import { ExpensesView } from './components/expenses/ExpensesView';
 import { ResponsiveAppShell } from './components/layout/ResponsiveAppShell';
 import { DeleteButton } from './components/ui/DeleteButton';
 import { EmptyState } from './components/ui/EmptyState';
 import { ItemImage } from './components/ui/ItemImage';
 import { SectionHeader } from './components/ui/SectionHeader';
-import { colorVar, PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES, EXPERIENCE_CATEGORIES } from './domain/tripConfig';
+import { addDays, diffDays, fmtDate, fmtDateFull, toISO } from './domain/dates';
+import { colorVar, catOf, PLACE_CATEGORIES, STAY_TYPES, TRANSPORT_TYPES, EXPERIENCE_CATEGORIES } from './domain/tripConfig';
 
 /* ============================================================
    ESTILOS GLOBALES (fuentes, colores, clases utilitarias)
@@ -37,32 +39,11 @@ function GlobalStyle() {
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
 
-      :root {
-        /* Superficies (translúcidas = cristal sobre el fondo líquido) */
-        --paper: rgba(255,255,255,0.08);
-        --paper-dim: rgba(255,255,255,0.13);
-        --ink: #0A0C1A;
-        /* Texto */
-        --text: #F4F6FF;
-        --text-inverse: #FFFFFF;
-        /* Acentos */
-        --stamp: #FF4D9D;
-        --gold: #FFC23E;
-        --sky: #4DD8FF;
-        --sage: #3ED598;
-        /* Tintes: bordes blancos translúcidos sobre el cristal */
-        --line-rgb: 255,255,255;
-        --inverse-rgb: 255,255,255;
-        --scrim-rgb: 6,8,20;
-        --stamp-rgb: 255,77,157;
-        /* Campos / chips */
-        --field-bg: rgba(255,255,255,0.07);
-        --field-text: #F4F6FF;
-        --font-display: 'Space Grotesk', sans-serif;
-        --font-body: 'Manrope', sans-serif;
-      }
       * { box-sizing: border-box; }
-      html, body { background: var(--ink); }
+      /* Relleno detrás de la app (se ve en el padding de escritorio). Los
+         valores del tema activo los pone THEMES → style inline del contenedor;
+         esto es solo el color del <html>/<body> por debajo. */
+      html, body { background: #0A0C1A; }
 
       /* Fondo líquido: malla de gradientes suaves y animados, en tonos
          profundos (violeta oscuro / índigo / azul noche) para que el cristal
@@ -227,13 +208,14 @@ const TABS = [
   { key: 'mapa', label: 'Mapa', icon: Map },
   { key: 'lugares', label: 'Lugares', icon: Compass },
   { key: 'compras', label: 'Compras', icon: ShoppingBag },
+  { key: 'gastos', label: 'Gastos', icon: Wallet },
   { key: 'notas', label: 'Notas', icon: StickyNote },
 ];
 
 const ENTITY_KEY = {
   destination: 'destinations', stay: 'stays', transport: 'transports',
   place: 'places', activity: 'activities', note: 'notes', shopping: 'shopping',
-  experience: 'experiences', museum: 'museums',
+  experience: 'experiences', museum: 'museums', expense: 'expenses',
 };
 
 /* ============================================================
@@ -242,15 +224,6 @@ const ENTITY_KEY = {
 
 let uidSeq = 1000;
 const uid = (prefix = 'id') => `${prefix}-${uidSeq++}`;
-
-const parseISO = (s) => new Date(s + 'T00:00:00');
-const pad = (n) => String(n).padStart(2, '0');
-const toISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const addDays = (iso, n) => { const d = parseISO(iso); d.setDate(d.getDate() + n); return toISO(d); };
-const diffDays = (a, b) => Math.round((parseISO(b) - parseISO(a)) / 86400000);
-const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-const fmtDate = (iso, opts = { day: 'numeric', month: 'short' }) => parseISO(iso).toLocaleDateString('es-MX', opts);
-const fmtDateFull = (iso) => cap(parseISO(iso).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
 
 function jitter(pos, seed) {
   let h = 0;
@@ -448,7 +421,7 @@ function TransportTicket({ t, role, onEdit, onDelete }) {
 }
 
 function ActivityCard({ a, onEdit, onDelete, onShift }) {
-  const cat = PLACE_CATEGORIES[a.category] || PLACE_CATEGORIES.otro;
+  const cat = catOf(PLACE_CATEGORIES, a.category);
   const Icon = cat.icon;
   return (
     <div className="rounded-2xl p-3.5 bg-paper border flex gap-3" style={{ borderColor: 'rgba(var(--line-rgb),0.1)' }}>
@@ -475,7 +448,7 @@ function ActivityCard({ a, onEdit, onDelete, onShift }) {
 }
 
 function PlaceRow({ p, onEdit, onDelete, onToggle }) {
-  const cat = PLACE_CATEGORIES[p.category] || PLACE_CATEGORIES.otro;
+  const cat = catOf(PLACE_CATEGORIES, p.category);
   const Icon = cat.icon;
   return (
     <div className="rounded-2xl p-3.5 bg-paper border flex items-center gap-3" style={{ borderColor: 'rgba(var(--line-rgb),0.1)', opacity: p.visited ? 0.6 : 1 }}>
@@ -672,7 +645,7 @@ function MapaView({ data, destinations, openEdit }) {
         if (dest) list.push({ id: s.id, kind: 'alojamiento', type: 'stay', name: s.name, sub: STAY_TYPES[s.type], mapPos: jitter(dest.mapPos, s.id), color: 'gold', item: s });
       });
       data.places.forEach((p) => {
-        const cat = PLACE_CATEGORIES[p.category] || PLACE_CATEGORIES.otro;
+        const cat = catOf(PLACE_CATEGORIES, p.category);
         list.push({ id: p.id, kind: 'lugar', type: 'place', name: p.name, sub: cat.label, mapPos: p.mapPos, color: cat.color, item: p });
       });
     }
@@ -776,8 +749,7 @@ function LugaresView({ data, destinations, openAdd, openEdit, onDelete, onToggle
   const [filter, setFilter] = useState('todos');
   const [museumFilter, setMuseumFilter] = useState('todos');
   const filtered = data.places.filter((p) => (filter === 'todos' ? true : filter === 'visitados' ? p.visited : !p.visited));
-  const museums = data.museums || [];
-  const filteredMuseums = museums.filter((m) => (museumFilter === 'todos' ? true : museumFilter === 'visitados' ? m.visited : !m.visited));
+  const filteredMuseums = data.museums.filter((m) => (museumFilter === 'todos' ? true : museumFilter === 'visitados' ? m.visited : !m.visited));
 
   return (
     <div className="pb-6">
@@ -910,7 +882,7 @@ function NotasView({ data, openAdd, openEdit, onDelete, onHeaderClick }) {
 }
 
 function ExperienceRow({ x, onEdit, onToggle, onDelete }) {
-  const cat = EXPERIENCE_CATEGORIES[x.category] || EXPERIENCE_CATEGORIES.otro;
+  const cat = catOf(EXPERIENCE_CATEGORIES, x.category);
   return (
     <div className="rounded-2xl bg-paper border overflow-hidden" style={{ borderColor: 'rgba(var(--line-rgb),0.1)', opacity: x.visited ? 0.72 : 1 }}>
       {x.imageUrl && <ItemImage src={x.imageUrl} alt={x.name} aspect="aspect-video" />}
@@ -952,8 +924,7 @@ function ExperienceRow({ x, onEdit, onToggle, onDelete }) {
 // aislado por completo de la lógica de Notas.
 function EasterEggView({ data, openAdd, openEdit, onDelete, onToggleVisited }) {
   const [catFilter, setCatFilter] = useState('todas');
-  const experiences = data.experiences || [];
-  const filtered = experiences.filter((x) => {
+  const filtered = data.experiences.filter((x) => {
     const cat = x.category || 'otro';
     return catFilter === 'todas' || cat === catFilter;
   });
@@ -1037,7 +1008,18 @@ export default function TripPlannerApp() {
   };
 
   useEffect(() => {
-    api.getState().then(setData).catch((e) => console.error('No se pudo cargar el viaje desde el servidor', e));
+    api.getState()
+      // Punto ÚNICO de normalización de listas: si la respuesta viene de un
+      // Worker anterior a alguna de estas entidades (o con la migración sin
+      // aplicar) aquí queda como lista vacía, y el resto de la app puede
+      // asumir sin más que `data.<entidad>` siempre es un array.
+      .then((state) => setData({
+        ...state,
+        museums: state.museums || [],
+        experiences: state.experiences || [],
+        expenses: state.expenses || [],
+      }))
+      .catch((e) => console.error('No se pudo cargar el viaje desde el servidor', e));
   }, []);
 
   // --- Acciones genéricas (punto de extensión: persistencia / agente IA) ---
@@ -1091,14 +1073,14 @@ export default function TripPlannerApp() {
     api.update('places', id, { visited }).catch((e) => console.error(e));
   };
   const toggleMuseumVisited = (id) => {
-    const current = (data.museums || []).find((m) => m.id === id);
+    const current = data.museums.find((m) => m.id === id);
     if (!current) return;
     const visited = !current.visited;
     setData((d) => ({ ...d, museums: d.museums.map((m) => (m.id === id ? { ...m, visited } : m)) }));
     api.update('museums', id, { visited }).catch((e) => console.error(e));
   };
   const toggleExperienceVisited = (id) => {
-    const current = (data.experiences || []).find((x) => x.id === id);
+    const current = data.experiences.find((x) => x.id === id);
     if (!current) return;
     const visited = !current.visited;
     setData((d) => ({ ...d, experiences: d.experiences.map((x) => (x.id === id ? { ...x, visited } : x)) }));
@@ -1117,7 +1099,10 @@ export default function TripPlannerApp() {
   const openEdit = (type, item) => setSheet({ type, mode: 'edit', initial: item });
 
   const handleSave = (values) => {
-    if (sheet.type === 'trip') updateTrip(values);
+    // El presupuesto no es una entidad: son campos dentro de trip.payload, así
+    // que se guarda por el mismo camino que el viaje (merge, sin tocar el
+    // contrato del endpoint).
+    if (sheet.type === 'trip' || sheet.type === 'budget') updateTrip(values);
     else if (sheet.mode === 'add') add(ENTITY_KEY[sheet.type], values);
     else update(ENTITY_KEY[sheet.type], sheet.initial.id, values);
     closeSheet();
@@ -1141,7 +1126,6 @@ export default function TripPlannerApp() {
     '--field-bg': t.fieldBg, '--field-text': t.fieldText,
     '--font-display': t.fontDisplay, '--font-body': t.fontBody,
   };
-  const isOtaku = theme === 'otaku';
 
   if (!data) {
     return (
@@ -1169,6 +1153,9 @@ export default function TripPlannerApp() {
       {tab === 'compras' && (
         <ComprasView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onToggleAcquired={toggleAcquired} />
       )}
+      {tab === 'gastos' && (
+        <ExpensesView data={data} destinations={destinationsSorted} openAdd={openAdd} openEdit={openEdit} onDelete={remove} />
+      )}
       {tab === 'notas' && (
         <NotasView data={data} openAdd={openAdd} openEdit={openEdit} onDelete={remove} onHeaderClick={handleNotesHeaderClick} />
       )}
@@ -1184,10 +1171,10 @@ export default function TripPlannerApp() {
       <div className="liquid-blob" style={{ width: 380, height: 380, top: '-10%', left: '-8%', background: 'radial-gradient(circle, rgba(70,64,190,0.8), transparent 70%)' }} />
       <div className="liquid-blob" style={{ width: 440, height: 440, top: '38%', right: '-12%', background: 'radial-gradient(circle, rgba(150,36,140,0.6), transparent 70%)' }} />
       <div className="liquid-blob" style={{ width: 320, height: 320, bottom: '-12%', left: '26%', background: 'radial-gradient(circle, rgba(24,96,170,0.6), transparent 70%)' }} />
-      <ResponsiveAppShell tabs={activeTabs} tab={tab} setTab={setTab} theme={theme} setTheme={setTheme} isOtaku={isOtaku} onNotesTap={handleNotesHeaderClick}>
+      <ResponsiveAppShell tabs={activeTabs} tab={tab} setTab={setTab} theme={theme} setTheme={setTheme} onNotesTap={handleNotesHeaderClick}>
         {activeView}
       </ResponsiveAppShell>
-      <SheetRouter sheet={sheet} onClose={closeSheet} onSave={handleSave} onDeleteEntity={handleDeleteEntity} destinations={destinationsSorted} places={data.places} />
+      <SheetRouter sheet={sheet} onClose={closeSheet} onSave={handleSave} onDeleteEntity={handleDeleteEntity} destinations={destinationsSorted} places={data.places} expenses={data.expenses} />
     </div>
   );
 }
